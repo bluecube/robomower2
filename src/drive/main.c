@@ -14,12 +14,12 @@
 
 void sensor_enable()
 {
-    PORTD |= _BV(PD3);
+    PORTD |= _BV(PD3) | _BV(PD4); // enable sensor power and pull up resistor
 }
 
 void sensor_disable()
 {
-    PORTD &= ~_BV(PD3);
+    PORTD &= ~(_BV(PD3) | _BV(PD4)); // enable sensor power and pull up resistor
 }
 
 /// Set the output value for the servo as signed integer from -127 to 127.
