@@ -10,33 +10,36 @@
 #endif
 
 #define SERVO_PRESCALER 8
-#define SERVO_TICKS_PER_MS (F_CPU / 1000 / SERVO_PRESCALER)
+#define SERVO_TICKS_PER_MS ((uint16_t)(F_CPU / (SERVO_PRESCALER * (uint16_t)1000)))
+#define SERVO_NEUTRAL_POSITION ((3 * SERVO_TICKS_PER_MS) / 2)
+#define SERVO_PERIOD (20 * SERVO_TICKS_PER_MS)
 
 void sensor_enable()
 {
-    PORTD |= _BV(PD3) | _BV(PD4); // enable sensor power and pull up resistor
+    PORTD |= _BV(PD3); // enable sensor power
+    PORTD |= _BV(PD4); // enable pull up resistor
 }
 
 void sensor_disable()
 {
-    PORTD &= ~(_BV(PD3) | _BV(PD4)); // enable sensor power and pull up resistor
+    PORTD &= ~_BV(PD3); // disable sensor power
+    PORTD &= ~_BV(PD4); // disable pull up resistor
 }
 
 /// Set the output value for the servo as signed integer from -127 to 127.
 void servo_set(int16_t value)
 {
-    OCR1A =
-        3 * SERVO_TICKS_PER_MS / 2 + // Neutral position
-        (value * (SERVO_TICKS_PER_MS / 2)) / 127;
+    OCR1A = SERVO_NEUTRAL_POSITION + (value * (SERVO_TICKS_PER_MS / 2)) / 127;
 }
 
 void servo_enable(int16_t value)
 {
     servo_set(value);
 
-    TCNT1 = ICR1 - 1; // First period of the servo should be complete.
+    TCNT1 = SERVO_PERIOD - 1; // We want a complete period of the servo to happen --
+                              // including the first rising edge.
 
-    TCCR1B |= CS10 | CS11;
+    TCCR1B |= _BV(CS10) | _BV(CS11);
         // setting the prescaler to 8 => enabling timer.
 }
 
@@ -62,7 +65,7 @@ void setup()
     TCCR1B =
         _BV(WGM12) | _BV(WGM13); // Fast PWM, counting to ICR1, continued
         // Timer disabled. The prescaler is set when servo output is enabled
-    ICR1 = 20 * SERVO_TICKS_PER_MS - 1; // setting the top value to 20ms
+    ICR1 = SERVO_PERIOD - 1; // setting the top value to 20ms
 
     // I2C communication
     TWAR = I2C_ADDRESS << 1;
@@ -84,7 +87,7 @@ uint8_t distance_travelled()
     if (TIFR & _BV(TOV0))
     {
         // If there was an overflow
-        TIFR &= ~_BV(TOV0);
+        TIFR |= _BV(TOV0); // Clearing flag by writing 1 into it? Datasheet seems to say so.
         return UINT8_MAX;
     }
     else

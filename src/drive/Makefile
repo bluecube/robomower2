@@ -17,7 +17,7 @@ CFLAGS+=-DF_CPU=$(F_CPU)
 CFLAGS+=-DI2C_ADDRESS=$(I2C_ADDRESS)
 CFLAGS+=-mmcu=$(MCU)
 CFLAGS+=-Wall -Wextra
-CFLAGS+=-Os
+CFLAGS+=-Os -pipe -std=c99
 
 CFILES=main.c
 OFILES=$(addprefix $(BUILD_DIR)/,$(CFILES:.c=.o))
