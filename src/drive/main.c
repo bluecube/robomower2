@@ -14,6 +14,12 @@
 
 #define SENSOR_ENABLED (PORTD & _BV(PD3))
 
+/// Calculate ((a << shift) / b) with correct rounding
+/// a << (shift + 1) must fit into uint32_t
+#define ROUNDED_DIVISION(a, b, shift) \
+    (((((uint32_t)(a)) << ((shift) + 1)) / (b) + 1) >> 1)
+
+
 void sensor_enable()
 {
     PORTD |= _BV(PD3); // enable sensor power
@@ -58,7 +64,10 @@ void servo_set(int16_t value)
     if (!SENSOR_ENABLED)
         servo_enable();
 
-    OCR1A = SERVO_NEUTRAL_POSITION + (value * (SERVO_TICKS_PER_MS / 2)) / 127;
+    // OCR1A = SERVO_NEUTRAL_POSITION +
+    //    (value * (SERVO_TICKS_PER_MS / 2)) / 127;
+    uint16_t multiplier = ROUNDED_DIVISION(SERVO_TICKS_PER_MS / 2, INT8_MAX, 8);
+    OCR1A = SERVO_NEUTRAL_POSITION + ((value * multiplier) >> 8);
 }
 
 void setup()
