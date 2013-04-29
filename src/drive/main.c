@@ -45,7 +45,8 @@ void servo_enable()
 
 void servo_disable()
 {
-    TCCR1B &= _BV(CS10) | _BV(CS11) | _BV(CS12);
+    TCCR1B &= ~(_BV(CS10) | _BV(CS11) | _BV(CS12));
+        // Clear the prescaler flags => disable timer
     PORTB &= ~_BV(PB1); // Set the output pin to zero.
 
     sensor_disable();
