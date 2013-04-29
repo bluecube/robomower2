@@ -70,7 +70,27 @@ void servo_set(int16_t value)
     OCR1A = SERVO_NEUTRAL_POSITION + ((value * multiplier) >> 8);
 }
 
-void setup()
+/// Return the measured distance in ticks, or
+/// UINT8_MAX to indicate overflow.
+/// Also reset the counter and clear the overflow flag.
+uint8_t distance_travelled()
+{
+    uint8_t tmp = TCNT0;
+    TCNT0 = 0;
+
+    if (TIFR & _BV(TOV0))
+    {
+        // If there was an overflow
+        TIFR |= _BV(TOV0); // Clearing flag by writing 1 into it? Datasheet seems to say so.
+        return UINT8_MAX;
+    }
+    else
+    {
+        return tmp;
+    }
+}
+
+int main()
 {
     // Output ports:
     DDRB |= _BV(PB1); // servo
@@ -95,32 +115,8 @@ void setup()
         _BV(TWEN) | // enable
         _BV(TWIE); // enable interrupts
 
-    sei();
-}
+    sei(); // bzzzzzzzzz........
 
-/// Return the measured distance in ticks, or
-/// UINT8_MAX to indicate overflow.
-/// Also reset the counter and clear the overflow flag.
-uint8_t distance_travelled()
-{
-    uint8_t tmp = TCNT0;
-    TCNT0 = 0;
-
-    if (TIFR & _BV(TOV0))
-    {
-        // If there was an overflow
-        TIFR |= _BV(TOV0); // Clearing flag by writing 1 into it? Datasheet seems to say so.
-        return UINT8_MAX;
-    }
-    else
-    {
-        return tmp;
-    }
-}
-
-int main()
-{
-    setup();
     while(1);
 }
 
