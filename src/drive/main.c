@@ -54,7 +54,7 @@ void servo_disable()
 
 /// Set the output value for the servo as signed integer from -127 to 127.
 /// Value of -128 means disabling of the servo.
-void servo_set(int16_t value)
+void servo_set(int8_t value)
 {
     if (value == -128)
     {
