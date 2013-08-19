@@ -1,0 +1,18 @@
+This directory contains an implementation of a communication protocol based on
+(and probably mostly compatible with) 9 bit version of Martin Locker's RoboNet protocol:
+http://wiki.robotika.cz/dispatch.fcgi/KomunikacniProtokol
+
+The protocol is works in half-duplex mode, with master initiating all communication.
+As a difference from the original protocol, each physical device has 16 addresses
+(the lower 4 bits of address determine physical device, upper 4 bits have application
+specific meaning). There are also 16 broadcast addresses instead of only one.
+
+This implementation is designed for ATMega8 running at 8 MHz.
+It is interrupt based and uses AVR's multiprocessor mode to minimize the CPU load.
+All of the interface functions are non-blocking and have as much error detection as possible.
+A major weakness of this implementation is a lack of double buffering, so it is possible
+to loose a message (but still detect this), if two messages are sent to this device in a quick
+succession.
+
+To use this library, it has to be compiled with preprocessor definitions specifying
+the device address, baud rate and TX/RX selection pin.
