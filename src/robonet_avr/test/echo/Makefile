@@ -1,8 +1,8 @@
 ################################ Configuration: ################################
 CFLAGS+=-DF_CPU=8000000L
 CFLAGS+=-DROBONET_OWN_ADDRESS=0x01
-CFLAGS+=-DROBONET_DIRECTION_PORT=PORTB
-CFLAGS+=-DROBONET_DIRECTION_BIT=PB1
+CFLAGS+=-DROBONET_DIRECTION_PORT=B
+CFLAGS+=-DROBONET_DIRECTION_BIT=1
 CFLAGS+=-DBAUD=200000L
 CFLAGS+=-mmcu=atmega8
 ################################################################################

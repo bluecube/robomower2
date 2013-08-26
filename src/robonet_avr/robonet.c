@@ -7,6 +7,15 @@
 volatile struct robonetPacket robonetBuffer;
 volatile uint8_t status;
 
+#define CONCAT2_(A, B) A##B
+#define CONCAT3_(A, B, C) A##B##C
+#define CONCAT2(A, B) CONCAT2_(A, B)
+#define CONCAT3(A, B, C) CONCAT3_(A, B, C)
+
+#define DDR_DIRECTION CONCAT2(DDR, ROBONET_DIRECTION_PORT)
+#define PORT_DIRECTION CONCAT2(PORT, ROBONET_DIRECTION_PORT)
+#define NUMBER_DIRECTION CONCAT3(P, ROBONET_DIRECTION_PORT, ROBONET_DIRECTION_BIT)
+
 void robonet_init()
 {
     UCSRA = _BV(MPCM); // multiprocessor mode
@@ -17,8 +26,10 @@ void robonet_init()
         // asynchronous, no parity, 1 stop bit
         _BV(UCSZ1) | _BV(UCSZ0); // 9bit, continued
 
-   UBRRH = UBRRH_VALUE;
-   UBRRL = UBRRL_VALUE;
+    UBRRH = UBRRH_VALUE;
+    UBRRL = UBRRL_VALUE;
+
+    DDR_DIRECTION |= _BV(NUMBER_DIRECTION); // TXEN
 }
 
 /** Calculate correct CRC for the packet that is currently in the buffer. */
@@ -40,25 +51,19 @@ uint8_t robonet_receive()
     {
         ucsraCopy = UCSRA;
         statusCopy = status;
+
+        UCSRA &= ~_BV(FE);
+        UCSRA &= ~_BV(DOR);
     }
 
     if (ucsraCopy & _BV(FE))
     {
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-        {
-            UCSRA &= ~_BV(FE);
-            UCSRA &= ~_BV(DOR);
-            status = 0;
-        }
+        status = 0;
         return ROBONET_FRAME_ERROR;
     }
     else if (ucsraCopy & _BV(DOR))
     {
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-        {
-            UCSRA &= ~_BV(DOR);
-            status = 0;
-        }
+        status = 0;
         return ROBONET_BYTE_OVERRUN_ERROR;
     }
     else if (statusCopy > robonetBuffer.length + 3)
@@ -93,7 +98,7 @@ void robonet_transmit()
     robonetBuffer.data[robonetBuffer.length] = crc;
 
     status = 1;
-    ROBONET_DIRECTION_PORT |= _BV(ROBONET_DIRECTION_BIT);
+    PORT_DIRECTION |= _BV(NUMBER_DIRECTION);
     UCSRB |= _BV(TXB8);
     UDR = robonetBuffer.address;
 }
@@ -134,6 +139,6 @@ ISR(USART_UDRE_vect)
 
 ISR(USART_TXC_vect)
 {
-    ROBONET_DIRECTION_PORT &= ~_BV(ROBONET_DIRECTION_BIT);
+    PORT_DIRECTION &= ~_BV(NUMBER_DIRECTION);
     status = 0;
 }
