@@ -16,7 +16,7 @@ GOAL=$(BUILD_DIR)/echo.hex
 CFLAGS+=-Wall -Wextra
 CFLAGS+=-Os -pipe -std=c99 -g
 
-CFILES=main.c robonet_avr/robonet.c
+CFILES=main.c robonet/robonet.c
 #SFILES=
 OFILES=$(addprefix $(BUILD_DIR)/,$(CFILES:.c=.o) $(SFILES:.s=.o))
 DEPFILES = $(OFILES:.o=.d)
