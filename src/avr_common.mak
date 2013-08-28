@@ -10,7 +10,7 @@ endif
 
 # Default settings
 F_CPU?=8000000L
-BAUD?=200000L
+BAUD?=38400
 MCU?=atmega8
 
 AVRDUDE_PORT?=/dev/ttyUSB0
