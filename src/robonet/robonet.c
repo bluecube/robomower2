@@ -18,8 +18,8 @@ volatile uint8_t status;
 
 void robonet_init()
 {
-    UCSRA = _BV(MPCM); // multiprocessor mode
-    UCSRB = _BV(RXCIE) | _BV(TXCIE) | _BV(UDRIE) | // all interrupts
+    //UCSRA = _BV(MPCM); // multiprocessor mode
+    UCSRB = _BV(RXCIE) | // recieve interrupt
         _BV(RXEN) | _BV(TXEN) | // enable receive and transmit
         _BV(UCSZ2); // first part of 9bit setting.
     UCSRC = _BV(URSEL) | // register select -- needed for accessing UCSRC
@@ -30,6 +30,10 @@ void robonet_init()
     UBRRL = UBRRL_VALUE;
 
     DDR_DIRECTION |= _BV(NUMBER_DIRECTION); // TXEN
+    PORTD |= _BV(PD0); // enable pull-up ont the RX pin
+
+    //DDRC |= _BV(PC5);
+    //PORTC |= _BV(PC5);
 }
 
 /** Calculate correct CRC for the packet that is currently in the buffer. */
@@ -94,51 +98,60 @@ uint8_t robonet_receive_complete()
 
 void robonet_transmit()
 {
-    uint8_t crc = packet_crc();
-    robonetBuffer.data[robonetBuffer.length] = crc;
+    uint8_t crc = 0;
 
-    status = 1;
     PORT_DIRECTION |= _BV(NUMBER_DIRECTION);
     UCSRB |= _BV(TXB8);
-    UDR = robonetBuffer.address;
+
+    for (int i = 0; i < robonetBuffer.length + 2; ++i)
+    {
+        uint8_t byte = ((uint8_t *)(&robonetBuffer))[i];
+        UDR = byte;
+        crc = _crc_ibutton_update(crc, byte);
+
+        while (!(UCSRA & _BV(UDRE)));
+        UCSRB &= ~_BV(TXB8);
+    }
+
+    UDR = crc;
+    UCSRA |= _BV(TXC);
+    //a race condition right here -- if the code gets interrupted between
+    //setting UDR and TXC, then the txc might be cleared after all the data have
+    //been shifted out and the following loop might get stuck forever.
+    //This will not be a problem if interrupts are short
+    while (!(UCSRA & _BV(TXC)));
+
+    PORT_DIRECTION &= ~_BV(NUMBER_DIRECTION);
 }
 
 ISR(USART_RXC_vect)
 {
+    uint8_t received = UDR;
+    //PORTC ^= _BV(PC5);
+
     if (UCSRA & _BV(FE) || UCSRA & _BV(DOR))
         return;
 
-    uint8_t received = UDR;
+    register uint8_t statusCopy = status;
 
-    if (status == 0)
+    if (statusCopy == 0)
     {
         uint8_t targetAddress = received & 0x0f;
         if (targetAddress != ROBONET_OWN_ADDRESS && targetAddress != ROBONET_BROADCAST_ADDRESS)
+        {
             return;
+        }
 
         UCSRA &= ~_BV(MPCM);
     }
 
-    ((uint8_t*)(&robonetBuffer))[status] = received;
-    ++status;
+    ((uint8_t*)(&robonetBuffer))[statusCopy] = received;
+    ++statusCopy;
 
-    if (status == robonetBuffer.length + 3)
+    if (statusCopy >= robonetBuffer.length + 3)
         UCSRA |= _BV(MPCM);
-}
 
-ISR(USART_UDRE_vect)
-{
-    if (status >= robonetBuffer.length + 3)
-        return; // wait for the last byte to be finished and then terminate the
-                // transmission in the TXC vector.
-
-    UCSRB &= ~_BV(TXB8);
-    UDR = ((uint8_t *)(&robonetBuffer))[status];
-    ++status;
-}
-
-ISR(USART_TXC_vect)
-{
-    PORT_DIRECTION &= ~_BV(NUMBER_DIRECTION);
-    status = 0;
+    status = statusCopy;
+    // TODO: What happens when a new packet is received when older packet was not
+    // handled? Is this taken care of?
 }

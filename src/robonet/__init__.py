@@ -8,18 +8,17 @@ class RoboNetException(Exception):
 
 class RoboNetCRCException(RoboNetException):
     def __init__(self, packet, received_crc):
-        super().__init__("Invalid CRC received (expected 0x{02x}, got 0x{02x})".format(
+        super().__init__("Invalid CRC received (expected 0x{:02x}, got 0x{:02x})".format(
             packet.correct_crc(), received_crc))
         self.packet = packet
         self.received_crc = received_crc
 
 
 class RoboNetPacket:
-    _crc_fun = crcmod.mkCrcFun(0x18C, 0, False)
-
     def __init__(self, address, data):
         self.address = address
         self.data = data
+        self._crc_fun = crcmod.mkCrcFun(0x18C, 0, False)
 
     def address_device(self):
         return self.address & 0xf
@@ -31,7 +30,7 @@ class RoboNetPacket:
         return bytes(self)[-1]
 
     def __bytes__(self):
-        without_crc = bytes([self.address, len(self.data)]) + data
+        without_crc = bytes([self.address, len(self.data)]) + self.data
         return without_crc + bytes([self._crc_fun(without_crc)])
 
 
@@ -49,25 +48,25 @@ class RoboNet:
 
         iflag, oflag, cflag, lflag, ispeed, ospeed, cc = termios.tcgetattr(self._port.fd)
 
-        cflags |= termios.PARENB # enable parity
-        cflags |= self.CMSPAR # enable sticky parity
-        cflags &= ~termios.PARODD # space parity by default
-        iflags |= termios.IGNPAR # ignore parity on received bytes
+        cflag |= termios.PARENB # enable parity
+        cflag |= self.CMSPAR # enable sticky parity
+        cflag &= ~termios.PARODD # space parity by default
+        iflag |= termios.IGNPAR # ignore parity on received bytes
 
-        self._mark_attrs = (iflag,
+        self._mark_attrs = [iflag,
                             oflag,
                             cflag | termios.PARODD,
                             lflag,
                             ispeed,
                             ospeed,
-                            cc)
-        self._space_attrs = (iflag,
+                            cc]
+        self._space_attrs = [iflag,
                              oflag,
                              cflag,
                              lflag,
                              ispeed,
                              ospeed,
-                             cc)
+                             cc]
         self._set_space();
 
     def _set_mark(self):
@@ -81,18 +80,46 @@ class RoboNet:
     def send_packet(self, packet):
         """Send a single packet, don't wait for reply."""
         packet = bytes(packet)
-        self._set_mark();
-        self._port.write(packet[0])
-        self._set_space();
+        print("writing: " + str([hex(x) for x in packet]))
+
+        #self._port.setDTR(False)
+        #self._port.setRTS(True)
+        self._set_mark()
+        self._port.write(packet[0:1])
+        self._set_space()
         self._port.write(packet[1:])
         self._port.flush()
-        self._port.parity = serial.PARITY_MARK
+        #self._port.setDTR(True)
+        #self._port.setRTS(False)
 
     def receive_packet(self):
         """Receive and return a single packet."""
-        address, length = self._port.read(2)
+        address = self._port.read(1)[0]
+        print("address: " + hex(address))
+        length = self._port.read(1)[0]
+        print("length: " + hex(length))
         data = self._port.read(length + 1)
-        packet = RoboNetPacket(address, length, data[:-1])
+        print("data: " + str([hex(x) for x in data]))
+        packet = RoboNetPacket(address, data[:-1])
         if packet.correct_crc() != data[-1]:
             raise RoboNetCRCException(packet, data[-1])
         return packet
+
+    def broadcast_message(self, packet):
+        """Higher level function for transmitting data to all devices on the wire."""
+
+        if packet.address_device() != 0:
+            raise RoboNetException("This is not a broadcast packet")
+
+        self.send_packet(packet)
+
+    def send_message(self, packet):
+        """Higher level function for transmitting data to a device on the wire.
+        Returns the device's reply packet."""
+
+        if packet.address_device() == 0:
+            raise RoboNetException("This is a broadcast packet")
+
+        self._port.flushInput()
+        self.send_packet(packet)
+        return self.receive_packet()

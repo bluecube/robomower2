@@ -1,10 +1,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <robonet/robonet.h>
+#include <avr/interrupt.h>
 
 int main()
 {
     robonet_init();
+    sei();
 
     while(1)
     {
