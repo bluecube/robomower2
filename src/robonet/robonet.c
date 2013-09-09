@@ -18,7 +18,7 @@ volatile uint8_t status;
 
 void robonet_init()
 {
-    //UCSRA = _BV(MPCM); // multiprocessor mode
+    UCSRA = _BV(MPCM); // multiprocessor mode
     UCSRB = _BV(RXCIE) | // recieve interrupt
         _BV(RXEN) | _BV(TXEN) | // enable receive and transmit
         _BV(UCSZ2); // first part of 9bit setting.
@@ -37,7 +37,6 @@ void robonet_init()
 static uint8_t packet_crc()
 {
     uint8_t crc = 0;
-    uint8_t* data = (uint8_t*)&robonetBuffer;
     for (int i = 0; i < robonetBuffer.length + 2; ++i)
         crc = _crc_ibutton_update(crc, ((uint8_t*)(&robonetBuffer))[i]);
 
@@ -133,7 +132,9 @@ ISR(USART_RXC_vect)
 
     register uint8_t statusCopy = status;
 
-    if (statusCopy == 0)
+    if (statusCopy == 255)
+        return;
+    else if (statusCopy == 0)
     {
         uint8_t targetAddress = received & 0x0f;
         if (targetAddress != ROBONET_OWN_ADDRESS && targetAddress != ROBONET_BROADCAST_ADDRESS)
@@ -141,14 +142,20 @@ ISR(USART_RXC_vect)
             return;
         }
 
-        //UCSRA &= ~_BV(MPCM);
+        UCSRA &= ~_BV(MPCM);
+    }
+    else if (UCSRB & _BV(TXB8))
+    {
+        // there is a sync byte when we're not expecting it, this packet is lost
+        status = 0xff;
+        UCSRA |= _BV(MPCM);
+        return;
     }
 
-    ((uint8_t*)(&robonetBuffer))[statusCopy] = received;
-    ++statusCopy;
+    ((uint8_t*)(&robonetBuffer))[statusCopy++] = received;
 
-    //if (statusCopy >= robonetBuffer.length + 3)
-    //    UCSRA |= _BV(MPCM);
+    if (statusCopy >= robonetBuffer.length + 3)
+        UCSRA |= _BV(MPCM);
 
     status = statusCopy;
 }
