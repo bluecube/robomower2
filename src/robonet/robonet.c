@@ -30,17 +30,15 @@ void robonet_init()
     UBRRL = UBRRL_VALUE;
 
     DDR_DIRECTION |= _BV(NUMBER_DIRECTION); // TXEN
-    PORTD |= _BV(PD0); // enable pull-up ont the RX pin
-
-    //DDRC |= _BV(PC5);
-    //PORTC |= _BV(PC5);
+    PORTD |= _BV(PD0); // enable pull-up on the RX pin
 }
 
 /** Calculate correct CRC for the packet that is currently in the buffer. */
 static uint8_t packet_crc()
 {
     uint8_t crc = 0;
-    for (int i = 0; i < robonetBuffer.length + 3; ++i)
+    uint8_t* data = (uint8_t*)&robonetBuffer;
+    for (int i = 0; i < robonetBuffer.length + 2; ++i)
         crc = _crc_ibutton_update(crc, ((uint8_t*)(&robonetBuffer))[i]);
 
     return crc;
@@ -103,13 +101,15 @@ void robonet_transmit()
     PORT_DIRECTION |= _BV(NUMBER_DIRECTION);
     UCSRB |= _BV(TXB8);
 
+    uint8_t* data = (uint8_t*)&robonetBuffer;
+
     for (int i = 0; i < robonetBuffer.length + 2; ++i)
     {
-        uint8_t byte = ((uint8_t *)(&robonetBuffer))[i];
+        uint8_t byte = *data++;
         UDR = byte;
         crc = _crc_ibutton_update(crc, byte);
-
         while (!(UCSRA & _BV(UDRE)));
+
         UCSRB &= ~_BV(TXB8);
     }
 
@@ -127,7 +127,6 @@ void robonet_transmit()
 ISR(USART_RXC_vect)
 {
     uint8_t received = UDR;
-    //PORTC ^= _BV(PC5);
 
     if (UCSRA & _BV(FE) || UCSRA & _BV(DOR))
         return;
@@ -142,16 +141,14 @@ ISR(USART_RXC_vect)
             return;
         }
 
-        UCSRA &= ~_BV(MPCM);
+        //UCSRA &= ~_BV(MPCM);
     }
 
     ((uint8_t*)(&robonetBuffer))[statusCopy] = received;
     ++statusCopy;
 
-    if (statusCopy >= robonetBuffer.length + 3)
-        UCSRA |= _BV(MPCM);
+    //if (statusCopy >= robonetBuffer.length + 3)
+    //    UCSRA |= _BV(MPCM);
 
     status = statusCopy;
-    // TODO: What happens when a new packet is received when older packet was not
-    // handled? Is this taken care of?
 }

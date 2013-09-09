@@ -1,12 +1,7 @@
 #!/usr/bin/python3
 import robonet
 
-r = robonet.RoboNet('/dev/ttyUSB1', 4800)#38400)
-
-
-#while True:
-#    r.send_packet(robonet.RoboNetPacket(1, bytes([0, 0, 0, 0, 0, 0])))
-
+r = robonet.RoboNet('/dev/ttyUSB1', 38400)
 answer = r.send_message(robonet.RoboNetPacket(1, b'abc'))
-
-print(answer.data)
+print("echo: " + str([hex(x) for x in answer.data[:-1]]))
+print("status: " + hex(answer.data[-1]))

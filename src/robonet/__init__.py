@@ -1,5 +1,5 @@
 import serial
-import crcmod
+import crcmod.predefined
 import termios
 
 class RoboNetException(Exception):
@@ -18,7 +18,7 @@ class RoboNetPacket:
     def __init__(self, address, data):
         self.address = address
         self.data = data
-        self._crc_fun = crcmod.mkCrcFun(0x18C, 0, False)
+        self._crc_fun = crcmod.predefined.mkPredefinedCrcFun('crc-8-maxim')
 
     def address_device(self):
         return self.address & 0xf
@@ -80,7 +80,6 @@ class RoboNet:
     def send_packet(self, packet):
         """Send a single packet, don't wait for reply."""
         packet = bytes(packet)
-        print("writing: " + str([hex(x) for x in packet]))
 
         #self._port.setDTR(False)
         #self._port.setRTS(True)
@@ -95,11 +94,8 @@ class RoboNet:
     def receive_packet(self):
         """Receive and return a single packet."""
         address = self._port.read(1)[0]
-        print("address: " + hex(address))
         length = self._port.read(1)[0]
-        print("length: " + hex(length))
         data = self._port.read(length + 1)
-        print("data: " + str([hex(x) for x in data]))
         packet = RoboNetPacket(address, data[:-1])
         if packet.correct_crc() != data[-1]:
             raise RoboNetCRCException(packet, data[-1])

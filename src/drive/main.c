@@ -104,7 +104,6 @@ int main()
         if (robonetBuffer.address == 0x0f)
         {
             // broadcast function 0x00: latch
-
             // TODO
 
             continue; // don't transmit anything

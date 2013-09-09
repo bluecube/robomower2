@@ -5,6 +5,5 @@ ROBONET_DIRECTION_BIT=3
 GOAL=echo
 CFILES=main.c robonet/robonet.c
 SFILES=
-BAUD=4800
 
 include ../../../avr_common.mak

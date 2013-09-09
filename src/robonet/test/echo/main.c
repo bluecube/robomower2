@@ -14,9 +14,12 @@ int main()
         if (status == ROBONET_BUSY)
             continue;
 
-        memmove((void*)robonetBuffer.data, (void*)&robonetBuffer, robonetBuffer.length + 3);
+        for (int8_t i = robonetBuffer.length + 3; i >= 0; --i)
+        {
+            robonetBuffer.data[i] = ((uint8_t*)&robonetBuffer)[i];
+        }
+        robonetBuffer.data[robonetBuffer.length + 3] = status;
         robonetBuffer.length += 4;
-        robonetBuffer.data[robonetBuffer.length - 1] = status;
 
         robonet_transmit();
     }
