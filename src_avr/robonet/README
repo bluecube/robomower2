@@ -7,7 +7,7 @@ As a difference from the original protocol, each physical device has 16 addresse
 (the lower 4 bits of address determine physical device, upper 4 bits have application
 specific meaning). There are also 16 broadcast addresses instead of only one.
 
-The C code in this directory is designed for ATMega8 running at 8 MHz.
+It is designed for ATMega8 running at 8 MHz.
 Receive is interrupt based and transmit uses polling.
 AVR's 9 bit multiprocessor mode is utilized to minimize the CPU load.
 Receive function is non blocking and has as much error detection
@@ -17,7 +17,3 @@ sent to this device in a quick succession. This library, has to be compiled with
 preprocessor definitions specifying the device address, baud rate and TX/RX selection pin
 and some other stuff (F_CPU, ROBONET_OWN_ADDRESS, ROBONET_DIRECTION_PORT,
 ROBONET_DIRECTION_BIT and BAUD).
-
-The Python code is an implementation of a master for this protocol, using an ugly
-hack to work around posix serial port not allowing 9 bit communication.
-

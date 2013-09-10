@@ -1,7 +1,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdint.h>
-#include <robonet/robonet.h>
+#include <../robonet/robonet.h>
 
 #if F_CPU != 8000000L
 #error This will work only for 8MHz CPU frequency

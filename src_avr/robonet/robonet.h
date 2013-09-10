@@ -2,8 +2,8 @@
  * Implementation of Martin Locker's 8 bit RoboNet protocol for RS485.
  */
 
-#ifndef ROBONET_AVR_ROBONET_H
-#define ROBONET_AVR_ROBONET_H
+#ifndef SRC_AVR_ROBONET_ROBONET_H
+#define SRC_AVR_ROBONET_ROBONET_H
 
 #include <avr/io.h>
 #include <stdint.h>
@@ -60,4 +60,4 @@ uint8_t robonet_check_buffer_overrun();
 /** Start transmission of data in the buffer. Non-blocking. */
 void robonet_transmit();
 
-#endif
+#endif //SRC_AVR_ROBONET_ROBONET_H

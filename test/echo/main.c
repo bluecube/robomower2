@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <string.h>
-#include <robonet/robonet.h>
+#include <src_avr/robonet/robonet.h>
 #include <avr/interrupt.h>
 
 int main()
