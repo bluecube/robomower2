@@ -1,0 +1,3 @@
+An AVR mini library for driving a single RC servo using the timer/counter 1.
+It is intended to be compiled again with every use, instead of being linked to
+(similar to robonet library).
