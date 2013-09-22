@@ -1,0 +1,11 @@
+[interface]
+name = drive
+robonet_header = ../robonet/robonet.h
+include = ../broadcast.interface
+
+[request:update]
+speed = int8
+
+[response:update]
+distance = int16
+error = uint8
