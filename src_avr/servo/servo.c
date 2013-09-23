@@ -11,6 +11,7 @@
 #define SERVO_TICKS_PER_MS ((uint16_t)(F_CPU / (SERVO_PRESCALER * (uint16_t)1000)))
 #define SERVO_NEUTRAL_POSITION_TICKS ((3 * SERVO_TICKS_PER_MS) / 2)
 #define SERVO_PERIOD_TICKS (SERVO_PERIOD * SERVO_TICKS_PER_MS)
+#define SERVO_RANGE_TICKS 2 * SERVO_TICKS_PER_MS
 
 /// Calculate ((a << shift) / b) with correct rounding
 /// a << (shift + 1) must fit into uint32_t
@@ -33,11 +34,8 @@ void servo_init()
 
 void servo_enable()
 {
-    TCNT1 = SERVO_PERIOD_TICKS - 1; // We want a complete period of the servo to happen --
-                                // including the first rising edge.
-
-    TCCR1B |= _BV(CS11);
-        // setting the prescaler to 8 => enabling timer.
+    OCR1A = SERVO_NEUTRAL_POSITION_TICKS;
+    TCCR1B |= _BV(CS11); // setting the prescaler to 8 => enabling timer.
 }
 
 void servo_disable()
@@ -50,8 +48,19 @@ void servo_disable()
 /// Set the output value for the servo as signed integer from -127 to 127.
 void servo_set(int8_t value)
 {
-    // OCR1A = SERVO_NEUTRAL_POSITION +
-    //    (value * (SERVO_TICKS_PER_MS / 2)) / 127;
-    uint16_t multiplier = ROUNDED_DIVISION(SERVO_TICKS_PER_MS / 2, INT8_MAX, 8);
-    OCR1A = SERVO_NEUTRAL_POSITION_TICKS + ((value * multiplier) >> 8) - 1;
+    /* This function contains a hackish way to do:
+
+    OCR1A = SERVO_NEUTRAL_POSITION_TICKS +
+        (value * (SERVO_RANGE_TICKS / 2)) / 127;
+
+    while avoiding division and 32bit multiplication.
+    The result is not optimal, but it's much better than what the compiler
+    would generate by itself. */
+
+    int16_t multiplierHi = ROUNDED_DIVISION(SERVO_RANGE_TICKS / 2, INT8_MAX, 8) >> 8;
+    int16_t multiplierLo = ROUNDED_DIVISION(SERVO_RANGE_TICKS / 2, INT8_MAX, 8) & 0xFF;
+
+    // We're doing (value * multiplier) >> 8, while avoiding 32bit multiplication
+    int16_t tmp = ((multiplierLo * value) >> 8) + (multiplierHi * value);
+    OCR1A = SERVO_NEUTRAL_POSITION_TICKS + tmp - 1;
 }

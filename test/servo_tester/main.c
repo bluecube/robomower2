@@ -19,10 +19,11 @@ int main()
             continue;
 
         servo_set((int8_t)robonetBuffer.data[0]);
+        *(int16_t*)&robonetBuffer.data[0] = OCR1A;
+        robonetBuffer.data[2] = status;
 
         robonetBuffer.address = 0;
-        robonetBuffer.length = 2;
-        *(uint16_t*)&robonetBuffer.data = ICR1;
+        robonetBuffer.length = 3;
 
         robonet_transmit();
     }
