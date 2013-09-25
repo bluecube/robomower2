@@ -7571,6 +7571,7 @@ Source: avr.lbr</description>
 <part name="R2" library="rcl" deviceset="R-EU_" device="R0805" value="12k"/>
 <part name="P+6" library="supply1" deviceset="+5V" device=""/>
 <part name="R3" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
+<part name="P+9" library="supply1" deviceset="+5V" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -7608,22 +7609,11 @@ Source: avr.lbr</description>
 <instance part="R2" gate="G$1" x="-17.78" y="86.36" rot="R90"/>
 <instance part="P+6" gate="1" x="-17.78" y="96.52"/>
 <instance part="R3" gate="G$1" x="-12.7" y="7.62" rot="R180"/>
+<instance part="P+9" gate="1" x="5.08" y="96.52"/>
 </instances>
 <busses>
 </busses>
 <nets>
-<net name="SENSOR_POWER" class="0">
-<segment>
-<wire x1="5.08" y1="91.44" x2="5.08" y2="93.98" width="0.1524" layer="91"/>
-<label x="5.08" y="93.98" size="1.778" layer="95" rot="R90"/>
-<pinref part="R1" gate="G$1" pin="2"/>
-</segment>
-<segment>
-<wire x1="111.76" y1="48.26" x2="127" y2="48.26" width="0.1524" layer="91"/>
-<label x="127" y="48.26" size="1.778" layer="95"/>
-<pinref part="IC1" gate="G$1" pin="PD4(XCK/T0)"/>
-</segment>
-</net>
 <net name="SENSOR" class="0">
 <segment>
 <wire x1="-15.24" y1="68.58" x2="-17.78" y2="68.58" width="0.1524" layer="91"/>
@@ -7636,9 +7626,9 @@ Source: avr.lbr</description>
 <pinref part="R2" gate="G$1" pin="1"/>
 </segment>
 <segment>
-<wire x1="111.76" y1="45.72" x2="127" y2="45.72" width="0.1524" layer="91"/>
-<label x="127" y="45.72" size="1.778" layer="95"/>
-<pinref part="IC1" gate="G$1" pin="PD5(T1)"/>
+<wire x1="111.76" y1="48.26" x2="127" y2="48.26" width="0.1524" layer="91"/>
+<label x="127" y="48.26" size="1.778" layer="95"/>
+<pinref part="IC1" gate="G$1" pin="PD4(XCK/T0)"/>
 </segment>
 </net>
 <net name="N$2" class="0">
@@ -7747,6 +7737,11 @@ Source: avr.lbr</description>
 <pinref part="P+6" gate="1" pin="+5V"/>
 <pinref part="R2" gate="G$1" pin="2"/>
 </segment>
+<segment>
+<wire x1="5.08" y1="91.44" x2="5.08" y2="93.98" width="0.1524" layer="91"/>
+<pinref part="R1" gate="G$1" pin="2"/>
+<pinref part="P+9" gate="1" pin="+5V"/>
+</segment>
 </net>
 <net name="SERVO" class="0">
 <segment>
@@ -7845,9 +7840,9 @@ Source: avr.lbr</description>
 <pinref part="IC2" gate="G$1" pin="DE"/>
 </segment>
 <segment>
-<wire x1="111.76" y1="50.8" x2="127" y2="50.8" width="0.1524" layer="91"/>
-<label x="127" y="50.8" size="1.778" layer="95"/>
-<pinref part="IC1" gate="G$1" pin="PD3(INT1)"/>
+<pinref part="IC1" gate="G$1" pin="PD2(INT0)"/>
+<wire x1="111.76" y1="53.34" x2="127" y2="53.34" width="0.1524" layer="91"/>
+<label x="127" y="53.34" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="RX" class="0">
@@ -7891,6 +7886,14 @@ Source: avr.lbr</description>
 </nets>
 </sheet>
 </sheets>
+<errors>
+<approved hash="104,1,63.5,45.72,IC1,VCC,+5V,,,"/>
+<approved hash="104,1,63.5,43.18,IC1,VCC,+5V,,,"/>
+<approved hash="104,1,63.5,71.12,IC1,AVCC,+5V,,,"/>
+<approved hash="104,1,193.04,-7.62,IC2P,VCC,+5V,,,"/>
+<approved hash="115,1,-28.6173,25.2053,JP1,,,,,"/>
+<approved hash="115,1,-26.0773,6.54473,JP2,,,,,"/>
+</errors>
 </schematic>
 </drawing>
 </eagle>
