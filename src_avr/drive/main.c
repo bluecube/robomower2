@@ -1,7 +1,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdint.h>
-#include <../robonet/robonet.h>
+#include <robonet/robonet.h>
 #include <../servo/servo.h>
 
 uint16_t latchedTicks;
@@ -54,31 +54,6 @@ int main()
     init();
     sei(); // bzzzzzzzzz........
 
-    while(true)
-    {
-        uint8_t status = robonet_receive();
-        if (status == ROBONET_BUSY)
-            continue;
-
-        if (robonetBuffer.address == 0x0f)
-        {
-            // broadcast function 0x00: latch
-            // TODO
-
-            continue; // don't transmit anything
-        }
-        else if (robonetBuffer.address == 0x00 | ROBONET_OWN_ADDRESS)
-        {
-            // addressed function 0x00: order new speed and transmit latched value
-            uint8_t orderedValue = robonetBuffer.data[0];
-
-            *((uint16_t)robonetBuffer.data) = latchedTicks;
-            robonetBuffer.length = 2;
-        }
-
-        // We're transmitting something, do the common stuff here
-        robonetBuffer.address = 0x00;
-        // TODO: Append the error status if it is nonzero
-        robonet_transmit();
-    }
+    while(1)
+        layer2_communicate();
 }

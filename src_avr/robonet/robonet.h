@@ -17,6 +17,9 @@
 #define ROBONET_BYTE_OVERRUN_ERROR 4
 #define ROBONET_BUFFER_OVERRUN_ERROR 5
 
+#define ROBONET_LAST_STATUS 5
+    // Don't forget to change this value when editing this file!!!!!
+
 #define ROBONET_MASTER_ADDRESS 0x0
 #define ROBONET_BROADCAST_ADDRESS 0xf
 

@@ -29,10 +29,13 @@ CFLAGS+=-DROBONET_DIRECTION_BIT=$(ROBONET_DIRECTION_BIT)
 CFLAGS+=-DBAUD=$(BAUD)
 CFLAGS+=-mmcu=$(MCU)
 CFLAGS+=-Wall -Wextra
-CFLAGS+=-flto
+#CFLAGS+=-flto
 CFLAGS+=-Os -pipe -std=c99 -g
 
-OFILES=$(addprefix $(BUILD_DIR)/,$(CFILES:.c=.o) $(SFILES:.s=.o))
+MAKEFILE_PATH:=$(dir $(lastword $(MAKEFILE_LIST)))
+LAYER2_SCRIPT=$(MAKEFILE_PATH)/../src_python/layer2/generator.py
+
+OFILES=$(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(CFILES) $(SFILES)) $(addsuffix .c.o,$(IFFILES)))
 DEPFILES = $(OFILES:.o=.d)
 
 DO_MAKE_DIR=mkdir -p $(@D)
@@ -44,21 +47,32 @@ $(BUILD_DIR)/%.elf: $(OFILES)
 	$(DO_MAKE_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
-$(BUILD_DIR)/%.o: %.c
+$(BUILD_DIR)/%.c.o: %.c
 	$(DO_MAKE_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/%.o: %.s
+$(BUILD_DIR)/%.c.o: $(BUILD_DIR)/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/%.interface.c $(BUILD_DIR)/%.interface.h: %.interface
+	$(DO_MAKE_DIR)
+	$(LAYER2_SCRIPT) --format avr_c --output-source $(basename $@).c --output-header  $(basename $@).h $<
+
+$(BUILD_DIR)/%.s.o: %.s
 	$(DO_MAKE_DIR)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILD_DIR)/%.d: %.c
+$(BUILD_DIR)/%.c.d: %.c
 	$(DO_MAKE_DIR)
 	$(CC) $(CFLAGS) -MM -MT $@ -MT $(@:.d=.o) -MF $@ $<
 
-$(BUILD_DIR)/%.d: %.s
+$(BUILD_DIR)/%.s.d: %.s
 	$(DO_MAKE_DIR)
 	$(CC) $(CFLAGS) -MM -MT $@ -MT $(@:.d=.o) -MF $@ $<
+
+$(BUILD_DIR)/%.interface.d: %.interface
+	$(DO_MAKE_DIR)
+	$(LAYER2_SCRIPT) --format avr_dependency --output $@ --target $@ --target $(@:.d=.o) $<
 
 %.hex: %.elf
 	$(OBJCOPY) -j .text -j .data -O ihex $< $@
