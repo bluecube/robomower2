@@ -29,6 +29,7 @@ CFLAGS+=-DROBONET_DIRECTION_BIT=$(ROBONET_DIRECTION_BIT)
 CFLAGS+=-DBAUD=$(BAUD)
 CFLAGS+=-mmcu=$(MCU)
 CFLAGS+=-Wall -Wextra
+CFLAGS+=-frename-registers -finline-functions -fweb -ftracer
 #CFLAGS+=-flto
 CFLAGS+=-Os -pipe -std=c99 -g
 
@@ -64,11 +65,11 @@ $(BUILD_DIR)/%.s.o: %.s
 
 $(BUILD_DIR)/%.c.d: %.c
 	$(DO_MAKE_DIR)
-	$(CC) $(CFLAGS) -MM -MT $@ -MT $(@:.d=.o) -MF $@ $<
+	$(CC) $(CFLAGS) -MM -MG -MT $@ -MT $(@:.d=.o) -MF $@ $<
 
 $(BUILD_DIR)/%.s.d: %.s
 	$(DO_MAKE_DIR)
-	$(CC) $(CFLAGS) -MM -MT $@ -MT $(@:.d=.o) -MF $@ $<
+	$(CC) $(CFLAGS) -MM -MG -MT $@ -MT $(@:.d=.o) -MF $@ $<
 
 $(BUILD_DIR)/%.interface.d: %.interface
 	$(DO_MAKE_DIR)
