@@ -8,4 +8,3 @@ speed = int8
 
 [response:update]
 distance = int16
-error = uint8
