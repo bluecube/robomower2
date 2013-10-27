@@ -1,0 +1,9 @@
+problems with drive-board-v1:
+    - Connectors are too close to each other, cannot connect programming
+      cable and data cable at the same time.
+    - Missing power connection in programming cable
+    - Maybe use better connector for data cable?
+    - Maybe use only solder pads for programming and use rs485 bootloader?
+    - Sensor power should be enabled by software
+
+

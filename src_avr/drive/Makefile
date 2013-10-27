@@ -1,5 +1,5 @@
 ROBONET_DIRECTION_PORT=D
-ROBONET_DIRECTION_BIT=3
+ROBONET_DIRECTION_BIT=2
 
 GOAL=drive
 CFILES=main.c robonet/robonet.c servo/servo.c
