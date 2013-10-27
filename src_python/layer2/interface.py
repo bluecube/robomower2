@@ -53,20 +53,22 @@ class Structure:
 
 
 class RequestResponse:
-    def __init__(self):
+    def __init__(self, automatic = False):
         self.request = None
         self.response = None
+        self.automatic = automatic
 
-    def _calc_checksum(self, init= 0):
+    def _calc_checksum(self, init = 0):
         checksum = self.request._calc_checksum(init)
         return self.response._calc_checksum(checksum)
 
 
 class Broadcast:
-    def __init__(self):
+    def __init__(self, automatic = False):
         self.broadcast = None
+        self.automatic = automatic
 
-    def _calc_checksum(self, init=0):
+    def _calc_checksum(self, init = 0):
         return self.broadcast._calc_checksum(init)
 
 
@@ -80,7 +82,17 @@ class Interface:
 
         self.includes = []
 
+        self._automatic_rr()
         self._parse(filename)
+
+    def _automatic_rr(self):
+        status = RequestResponse(True)
+        self.request_response['status'] = status
+
+        status.request = Structure({})
+        status.response = Structure(collections.OrderedDict([
+            ('status', 'uint8'),
+            ('interface_checksum', 'uint8')]))
 
     def _parse(self, filename):
         parser = configparser.ConfigParser(interpolation=None)
