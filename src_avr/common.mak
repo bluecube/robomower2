@@ -29,7 +29,7 @@ CFLAGS+=-DROBONET_DIRECTION_BIT=$(ROBONET_DIRECTION_BIT)
 CFLAGS+=-DBAUD=$(BAUD)
 CFLAGS+=-mmcu=$(MCU)
 CFLAGS+=-Wall -Wextra
-CFLAGS+=-frename-registers -finline-functions -fweb -ftracer
+CFLAGS+=-frename-registers -finline-functions -fweb -ftracer -freorder-blocks
 #CFLAGS+=-flto
 CFLAGS+=-Os -pipe -std=c99 -g
 
