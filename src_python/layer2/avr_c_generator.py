@@ -77,6 +77,8 @@ def _generate_header(interface, header_filename, f):
 
     for i, (name, rr) in enumerate(interface.request_response.items()):
         if rr.automatic:
+            f("/* Skipped automatic request '{}', id: {} */", name, i)
+            f()
             continue
         f("/* Request id: {} */", i)
         _struct(rr.request, name + "_request", f)
@@ -86,6 +88,8 @@ def _generate_header(interface, header_filename, f):
 
     for i, (name, broadcast) in enumerate(interface.broadcast.items()):
         if broadcast.automatic:
+            f("/* Skipped automatic broadcast '{}', id: {} */", name, i)
+            f()
             continue
         f("/* Broadcast id: {} */", i)
         _struct(broadcast.broadcast, name + "_broadcast", f)
