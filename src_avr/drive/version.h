@@ -1,6 +1,0 @@
-#ifndef DRIVE_VERSION_H
-#define DRIVE_VERSION_H
-
-#define DRIVE_PROTOCOL_VERSION 1
-
-#endif // DRIVE_VERSION_H
