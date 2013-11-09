@@ -34,12 +34,23 @@ CFLAGS+=-frename-registers -finline-functions -fweb -ftracer
 CFLAGS+=-Os -pipe -std=c99 -g
 
 MAKEFILE_PATH:=$(dir $(lastword $(MAKEFILE_LIST)))
-LAYER2_SCRIPT=$(MAKEFILE_PATH)/../src_python/layer2/generator.py
+LAYER2_SCRIPT:=$(MAKEFILE_PATH)/../src_python/layer2/generator.py
 
-OFILES=$(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(CFILES) $(SFILES)) $(addsuffix .c.o,$(IFFILES)))
-DEPFILES = $(OFILES:.o=.d)
+OFILES:=$(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(CFILES) $(SFILES)) $(addsuffix .c.o,$(IFFILES)))
+DEPFILES:=$(OFILES:.o=.d)
 
 DO_MAKE_DIR=mkdir -p $(@D)
+
+# <HACK HACK HACK HACKITY HACK>
+CFILES_WHOPR=$(CFILES) $(addprefix $(BUILD_DIR)/,$(addsuffix .c,$(IFFILES)))
+CFLAGS+=-fwhole-program
+WHOPR=$(BUILD_DIR)/whopr.c
+OFILES:=$(WHOPR:.c=.o) $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(SFILES)))
+$(WHOPR): $(CFILES_WHOPR)
+	$(DO_MAKE_DIR)
+	echo > $@
+	for file in $^ ; do echo "#include \"../$$file\"" >> $@ ; done
+# </HACK HACK HACK HACKITY HACK>
 
 .PHONY: all
 all: $(GOAL_FILE)
