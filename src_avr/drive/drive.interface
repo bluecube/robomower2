@@ -8,3 +8,11 @@ speed = int8
 
 [response:update]
 distance = int16
+
+[request:pid]
+k_p = int16
+k_i = int16
+k_d = int16
+
+[response:pid]
+# No data
