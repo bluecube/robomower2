@@ -3,15 +3,7 @@
 #include <stdint.h>
 #include <avr/io.h>
 
-#if F_CPU != 8000000L
-#error This will work only for 8MHz CPU frequency
-#endif
-
-#define SERVO_PRESCALER 8
-#define SERVO_TICKS_PER_MS ((uint16_t)(F_CPU / (SERVO_PRESCALER * (uint16_t)1000)))
-#define SERVO_NEUTRAL_POSITION_TICKS ((3 * SERVO_TICKS_PER_MS) / 2)
-#define SERVO_PERIOD_TICKS (SERVO_PERIOD * SERVO_TICKS_PER_MS)
-#define SERVO_RANGE_TICKS 2 * SERVO_TICKS_PER_MS
+#include "preprocessor.h"
 
 /// Calculate ((a << shift) / b) with correct rounding
 /// a << (shift + 1) must fit into uint32_t
@@ -45,7 +37,6 @@ void servo_disable()
     PORTB &= ~_BV(PB1); // Set the output pin to zero.
 }
 
-/// Set the output value for the servo as signed integer from -127 to 127.
 void servo_set(int8_t value)
 {
     /* This function contains a hackish way to do:
@@ -62,5 +53,10 @@ void servo_set(int8_t value)
 
     // We're doing (value * multiplier) >> 8, while avoiding 32bit multiplication
     int16_t tmp = ((multiplierLo * value) >> 8) + (multiplierHi * value);
-    OCR1A = SERVO_NEUTRAL_POSITION_TICKS + tmp - 1;
+    servo_set16(tmp);
+}
+
+void servo_set16(int16_t value)
+{
+    OCR1A = SERVO_NEUTRAL_POSITION_TICKS + value - 1;
 }
