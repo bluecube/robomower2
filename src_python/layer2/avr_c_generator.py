@@ -96,6 +96,7 @@ def _generate_header(interface, header_filename, f):
         _handle_function_decl(broadcast, name, True, f)
         f()
 
+    f("void layer2_init();")
     f("void layer2_communicate();")
     f()
     f("#endif")
@@ -116,6 +117,13 @@ def _generate_source(interface, header_filename, f):
     f('out->interface_checksum = 0x{:02x};', interface.checksum)
     f.close_brace()
     f()
+
+    f('void layer2_init()')
+    f.open_brace()
+    f('robonet_init();')
+    f.close_brace()
+    f()
+
     f('void layer2_communicate()')
     f.open_brace()
     f('uint8_t rxStatus = robonet_receive();')

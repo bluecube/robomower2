@@ -56,7 +56,7 @@ int main()
     TCCR0 |= _BV(CS02) | _BV(CS01) | _BV(CS00); // external clock source for TCNT0, rising edge
     TIMSK |= _BV(TOIE0); // Enable overflow interrupt on TCNT0
 
-    robonet_init();
+    layer2_init();
     servo_init();
     servo_enable();
     sei(); // bzzzzzzzzz........

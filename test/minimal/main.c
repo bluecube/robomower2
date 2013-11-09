@@ -4,7 +4,7 @@
 
 int main()
 {
-    robonet_init();
+    layer2_init();
     sei(); // bzzzzzzzzz........
 
     while(1)
