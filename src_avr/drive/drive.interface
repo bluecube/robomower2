@@ -1,7 +1,7 @@
 [interface]
 name = drive
-robonet_header = ../robonet/robonet.h
-include = ../broadcast.interface
+robonet_header = robonet/robonet.h
+include = broadcast.interface
 
 [request:update]
 speed = int8
