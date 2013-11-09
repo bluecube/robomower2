@@ -1,0 +1,3 @@
+Minimal AVR program using the layer2 framework. Does nothing else than responding
+to the enumeration command on the bus.
+
