@@ -45,7 +45,8 @@ DO_MAKE_DIR=mkdir -p $(@D)
 CFILES_WHOPR=$(CFILES) $(addprefix $(BUILD_DIR)/,$(addsuffix .c,$(IFFILES)))
 CFLAGS+=-fwhole-program
 WHOPR=$(BUILD_DIR)/whopr.c
-OFILES:=$(WHOPR:.c=.o) $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(SFILES)))
+OFILES:=$(WHOPR:.c=.c.o) $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(SFILES)))
+.DEFAULT_GOAL:=all
 $(WHOPR): $(CFILES_WHOPR)
 	$(DO_MAKE_DIR)
 	echo > $@
