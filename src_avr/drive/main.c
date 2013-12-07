@@ -7,13 +7,9 @@
 #define lo8(x) (((uint8_t*)&(x))[0])
 #define hi8(x) (((uint8_t*)&(x))[1])
 
-struct latched_value
-{
-    uint16_t state;
-    uint16_t previousState;
-};
+uint16_t odometryTicks;
 
-struct latched_value odometryTicks;
+uint16_t odometryTicksState;
 
 volatile uint8_t ticksHigh;
 
@@ -23,8 +19,11 @@ volatile uint8_t ticksHigh;
  * (at most one encoder tick may happen inside this function) and that it is executed with
  * interrupts enabled (because the counter high word is updated in an interrupt).
  * If these conditions are not met, then atomicity is lost and the low and high
- * bytes of the value might be desynchronized.*/
-static void latch_encoder_ticks(struct latched_value* out)
+ * bytes of the value might be desynchronized.
+ *
+ * This function is inline, because we want to avoid the indirect access to the state
+ * variable and because there should be enough program space left on the device anyway. */
+static inline uint16_t latch_encoder_ticks(uint16_t* state)
 {
     uint8_t tmpTicks = TCNT0;
     uint8_t tmpTicksHigh = ticksHigh;
@@ -45,9 +44,17 @@ static void latch_encoder_ticks(struct latched_value* out)
 
     // Now everything is safe in tmpTicks and tmpTicksHigh!
 
-    out->previousState = out->state;
-    lo8(out->state) = tmpTicks;
-    hi8(out->state) = tmpTicksHigh;
+    uint16_t newState;
+    lo8(newState) = tmpTicks;
+    hi8(newState) = tmpTicksHigh;
+
+    uint16_t oldState = *state;
+    *state = newState;
+
+    if (oldState < newState)
+        return oldState - newState;
+    else // An overflow occured
+        return oldState - newState + UINT16_MAX;
 }
 
 int main()
@@ -69,12 +76,12 @@ void handle_update_request(const struct update_request* in,
                            struct update_response* out)
 {
     servo_set(in->speed);
-    out->distance = odometryTicks.state - odometryTicks.previousState;
+    out->distance = odometryTicks;
 }
 
 void handle_latch_values_broadcast()
 {
-    latch_encoder_ticks(&odometryTicks);
+    odometryTicks = latch_encoder_ticks(&odometryTicks);
 }
 
 ISR(TIMER0_OVF_vect)
