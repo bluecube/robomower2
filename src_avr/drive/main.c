@@ -13,8 +13,14 @@ union byteaccess
 uint16_t odometryTicks;
 
 uint16_t odometryTicksState;
+uint16_t pidTicksState;
 
 volatile uint8_t ticksHigh;
+
+volatile int8_t requestedSpeed; // Units are ticks per SERVO_PERIOD
+volatile int8_t requestedSpeedDirection;
+
+volatile int16_t kP, kI, kD;
 
 /** Atomically read both lower and upper (extended by software) part of the encoder
  * tick counter and update the struct latched_value.
@@ -26,7 +32,7 @@ volatile uint8_t ticksHigh;
  *
  * This function is inline, because we want to avoid the indirect access to the state
  * variable and because there should be enough program space left on the device anyway. */
-static inline uint16_t latch_encoder_ticks(uint16_t* state)
+static uint16_t latch_encoder_ticks(uint16_t* restrict state)
 {
     union byteaccess newState;
 
@@ -80,6 +86,13 @@ void handle_update_request(const struct update_request* in,
     out->distance = odometryTicks;
 }
 
+void handle_pid_request(const struct pid_request* in)
+{
+    kP = in->kP;
+    kI = in->kI;
+    kD = in->kD;
+}
+
 void handle_latch_values_broadcast()
 {
     odometryTicks = latch_encoder_ticks(&odometryTicksState);
@@ -88,4 +101,12 @@ void handle_latch_values_broadcast()
 ISR(TIMER0_OVF_vect)
 {
     ++ticksHigh;
+}
+
+ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
+{
+    int16_t ticks = latch_encoder_ticks(&pidTicksState);
+    int16_t error = ticks - requestedSpeed;
+
+    servo_set((error * kP) >> 8);
 }
