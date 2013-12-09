@@ -142,6 +142,7 @@ def _generate_source(interface, header_filename, f):
 
     for i, (name, rr) in enumerate(interface.request_response.items()):
         f('case ROBONET_OWN_ADDRESS | 0x{:02x}:', i << 4)
+        f.indent()
         f('if (robonetBuffer.length != {})', len(rr.request))
         f.open_brace()
         f('layer2Status = LAYER2_INVALID_MESSAGE_LENGTH;')
@@ -161,10 +162,12 @@ def _generate_source(interface, header_filename, f):
         f('robonet_transmit();')
         f('layer2Status = LAYER2_OK;')
         f('return;')
+        f.dedent()
         f()
 
     for i, (name, broadcast) in enumerate(interface.broadcast.items()):
         f('case ROBONET_BROADCAST_ADDRESS | 0x{:02x}:', i << 4)
+        f.indent()
         f('if (robonetBuffer.length != {})', len(broadcast.broadcast))
         f.open_brace()
         f('layer2Status = LAYER2_INVALID_MESSAGE_LENGTH;')
@@ -178,6 +181,7 @@ def _generate_source(interface, header_filename, f):
         f.dedent();
         f('layer2Status = LAYER2_OK;')
         f('return;')
+        f.dedent()
         f()
 
     f('default:')
