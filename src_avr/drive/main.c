@@ -4,8 +4,11 @@
 #include "servo/servo.h"
 #include "build/drive.interface.h"
 
-#define lo8(x) (((uint8_t*)&(x))[0])
-#define hi8(x) (((uint8_t*)&(x))[1])
+union byteaccess
+{
+    uint16_t u16;
+    uint8_t u8[2];
+};
 
 uint16_t odometryTicks;
 
@@ -25,10 +28,12 @@ volatile uint8_t ticksHigh;
  * variable and because there should be enough program space left on the device anyway. */
 static inline uint16_t latch_encoder_ticks(uint16_t* state)
 {
-    uint8_t tmpTicks = TCNT0;
-    uint8_t tmpTicksHigh = ticksHigh;
+    union byteaccess newState;
 
-    if (tmpTicks > TCNT0)
+    newState.u8[0] = TCNT0;
+    newState.u8[1] = ticksHigh;
+
+    if (newState.u8[0] > TCNT0)
     {
         // there has been a timer overflow at timer 0
         // and it might have occured between reading TCNT0 and reading ticksHigh
@@ -38,23 +43,19 @@ static inline uint16_t latch_encoder_ticks(uint16_t* state)
         //
         // If there was only a single tick without overflow, we ignore it
         // and declare that the read happened before it (which is correct behavior).
-        tmpTicks = TCNT0;
-        tmpTicksHigh = ticksHigh;
+        newState.u8[0] = TCNT0;
+        newState.u8[1] = ticksHigh;
     }
 
-    // Now everything is safe in tmpTicks and tmpTicksHigh!
-
-    uint16_t newState;
-    lo8(newState) = tmpTicks;
-    hi8(newState) = tmpTicksHigh;
+    // Now everything is safe in newState
 
     uint16_t oldState = *state;
-    *state = newState;
+    *state = newState.u16;
 
-    if (oldState < newState)
-        return oldState - newState;
+    if (oldState < newState.u16)
+        return oldState - newState.u16;
     else // An overflow occured
-        return oldState - newState + UINT16_MAX;
+        return oldState - newState.u16 + UINT16_MAX;
 }
 
 int main()
