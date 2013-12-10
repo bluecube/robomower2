@@ -15,6 +15,13 @@ class RoboNetCRCException(RoboNetException):
 
 
 class RoboNetPacket:
+    @classmethod
+    def wrap(cls, arg):
+        if type(arg) == cls:
+            return arg
+        else:
+            return cls(*arg)
+
     def __init__(self, address, data):
         self.address = address
         self.data = data
@@ -104,6 +111,8 @@ class RoboNet:
     def broadcast_message(self, packet):
         """Higher level function for transmitting data to all devices on the wire."""
 
+        packet = RoboNetPacket.wrap(packet)
+
         if packet.address_device() != 0:
             raise RoboNetException("This is not a broadcast packet")
 
@@ -112,6 +121,8 @@ class RoboNet:
     def send_message(self, packet):
         """Higher level function for transmitting data to a device on the wire.
         Returns the device's reply packet."""
+
+        packet = RoboNetPacket.wrap(packet)
 
         if packet.address_device() == 0:
             raise RoboNetException("This is a broadcast packet")

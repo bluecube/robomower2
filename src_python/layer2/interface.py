@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import configparser
 import collections
 import os.path
@@ -31,6 +29,12 @@ class Type:
     def __len__(self):
         return self.size // 8
 
+    def pack(self, value):
+        return b''
+
+    def unpack(self, data):
+        return 0
+
 class Structure:
     def __init__(self, content):
         self.members = collections.OrderedDict();
@@ -51,6 +55,34 @@ class Structure:
     def __len__(self):
         return sum(len(t) for t in self.members.values())
 
+    def pack(self, *args, **kwargs):
+        if len(args) > len(self.members):
+            raise ValueError("Too many positional arguments")
+        elif len(args) + len(kwargs) > len(self.members):
+            raise ValueError("Too many arguments")
+        elif len(args) + len(kwargs) < len(self.members):
+            raise ValueError("Too few arguments")
+
+        packed = []
+        for i, (name, member) in enumerate(self.members.items()):
+            if i < len(args):
+                value = args[i]
+            else:
+                value = kwargs[name]
+
+            packed.append(member.pack(value))
+
+        result = b''.join(packed);
+        assert len(packed) == len(self)
+
+    def unpack(self, packed):
+        result = collections.OrderedDict();
+        offset = 0;
+        for name, member in self.members:
+            end_offset = offset + len(member)
+            result[name] = member.unpack(packed[offset:end_offset])
+            offset = end_offset
+        return result
 
 class RequestResponse:
     def __init__(self, automatic = False):
@@ -160,4 +192,3 @@ class Interface:
     @classmethod
     def _string_checksum(cls, string, init):
         return cls.crc_fun(string.encode('ascii'), init)
-
