@@ -12,7 +12,7 @@ endif
 F_CPU?=8000000L
 BAUD?=38400
 MCU?=atmega8
-ROBONET_OWN_ADDRESS=$(shell printf '%#04x' $(ROBONET_OWN_ADDRESS))
+override ROBONET_OWN_ADDRESS:=$(shell printf '%\#04x' $(ROBONET_OWN_ADDRESS))
 
 AVRDUDE_PORT?=/dev/ttyUSB0
 AVRDUDE_COMMAND?=avrdude -p $(MCU) -c buspirate -P $(AVRDUDE_PORT)
