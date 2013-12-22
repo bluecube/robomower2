@@ -95,6 +95,10 @@ $(BUILD_DIR)/%.interface.d: %.interface
 upload: $(GOAL_FILE)
 	$(AVRDUDE_COMMAND) -U flash:w:$(GOAL_FILE):i
 
+.PHONY: fuses
+fuses:
+	$(AVRDUDE_COMMAND) -U lfuse:w:0xe4:m -U hfuse:w:0xd8:m
+
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
