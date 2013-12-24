@@ -160,8 +160,7 @@ def _generate_source(interface, header_filename, f):
         f.dedent()
         f('robonetBuffer.length = {};', len(rr.response))
         f('robonet_transmit();')
-        f('layer2Status = LAYER2_OK;')
-        f('return;')
+        f('break;')
         f.dedent()
         f()
 
@@ -179,16 +178,20 @@ def _generate_source(interface, header_filename, f):
             f('(const struct {}_request*)&(robonetBuffer.data)', name)
         f(');')
         f.dedent();
-        f('layer2Status = LAYER2_OK;')
-        f('return;')
+        f('break;')
         f.dedent()
         f()
 
     f('default:')
+    f.indent()
     f('layer2Status = LAYER2_UNKNOWN_MESSAGE_TYPE;')
     f('return;')
+    f.dedent()
 
     f.close_brace()
+
+    f('layer2Status = robonet_receive_complete();')
+
     f.close_brace()
 
 def add_args(parser):
