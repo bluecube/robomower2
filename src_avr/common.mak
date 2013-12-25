@@ -30,9 +30,8 @@ CFLAGS+=-DROBONET_DIRECTION_BIT=$(ROBONET_DIRECTION_BIT)
 CFLAGS+=-DBAUD=$(BAUD)
 CFLAGS+=-mmcu=$(MCU)
 CFLAGS+=-Wall -Wextra
-CFLAGS+=-frename-registers -finline-functions -fweb -ftracer -freorder-blocks
-#CFLAGS+=-flto
-CFLAGS+=-Os -pipe -std=c99 -g
+CFLAGS+=-frename-registers -fweb -ftracer
+CFLAGS+=-O3 -pipe -std=c99 -g
 
 MAKEFILE_PATH:=$(dir $(lastword $(MAKEFILE_LIST)))
 LAYER2_SCRIPT:=$(MAKEFILE_PATH)/../src_python/layer2/generator.py
