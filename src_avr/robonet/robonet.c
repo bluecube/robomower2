@@ -7,6 +7,10 @@
 volatile struct robonetPacket robonetBuffer;
 volatile uint8_t status;
 
+#define SYNC_BYTE 0x55
+
+#define STATUS_WAITING_FOR_SYNC 0xff
+
 #define CONCAT2_(A, B) A##B
 #define CONCAT3_(A, B, C) A##B##C
 #define CONCAT2(A, B) CONCAT2_(A, B)
@@ -18,13 +22,12 @@ volatile uint8_t status;
 
 void robonet_init()
 {
-    UCSRA = _BV(MPCM); // multiprocessor mode
+    UCSRA = 0;
     UCSRB = _BV(RXCIE) | // recieve interrupt
-        _BV(RXEN) | _BV(TXEN) | // enable receive and transmit
-        _BV(UCSZ2); // first part of 9bit setting.
+        _BV(RXEN) | _BV(TXEN); // enable receive and transmit
     UCSRC = _BV(URSEL) | // register select -- needed for accessing UCSRC
         // asynchronous, no parity, 1 stop bit
-        _BV(UCSZ1) | _BV(UCSZ0); // 9bit, continued
+        _BV(UCSZ1) | _BV(UCSZ0); // 8bit
 
     UBRRH = UBRRH_VALUE;
     UBRRL = UBRRL_VALUE;
@@ -33,12 +36,37 @@ void robonet_init()
     PORTD |= _BV(PD0); // enable pull-up on the RX pin
 }
 
+ __attribute__((const,always_inline))
+static inline uint8_t crc_update(uint8_t crc, uint8_t data)
+{
+    if (__builtin_constant_p(crc) && __builtin_constant_p(data))
+    {
+        // Following is equivalent code for _crc_ibutton_update taken from AVR-libc documentation
+        uint8_t i;
+
+        crc = crc ^ data;
+        for (i = 0; i < 8; i++)
+        {
+            if (crc & 0x01)
+                crc = (crc >> 1) ^ 0x8C;
+            else
+                crc >>= 1;
+        }
+
+        return crc;
+    }
+    else
+        return _crc_ibutton_update(crc, data);
+}
+
 /** Calculate correct CRC for the packet that is currently in the buffer. */
 static uint8_t packet_crc()
 {
-    uint8_t crc = 0;
-    for (int i = 0; i < robonetBuffer.length + 2; ++i)
-        crc = _crc_ibutton_update(crc, ((uint8_t*)(&robonetBuffer))[i]);
+    uint8_t crc = crc_update(0, SYNC_BYTE);
+    uint8_t count = robonetBuffer.length + 2;
+    uint8_t* data = (uint8_t*)(&robonetBuffer);
+    for (uint8_t i = 0; i < count; ++i)
+        crc = crc_update(crc, *data++);
 
     return crc;
 }
@@ -57,59 +85,54 @@ uint8_t robonet_receive()
         UCSRA &= ~_BV(DOR);
     }
 
+    uint8_t lengthPlusThree = robonetBuffer.length + 3;
+
     if (ucsraCopy & _BV(FE))
-    {
-        status = 0;
         return ROBONET_FRAME_ERROR;
-    }
-    else if (ucsraCopy & _BV(DOR))
-    {
-        status = 0;
+    if (ucsraCopy & _BV(DOR))
         return ROBONET_BYTE_OVERRUN_ERROR;
-    }
-    else if (statusCopy > robonetBuffer.length + 3)
-    {
-        status = 0;
-        return ROBONET_BUFFER_OVERRUN_ERROR;
-    }
-    else if (statusCopy < 3 || statusCopy < robonetBuffer.length + 3)
+    if (statusCopy == STATUS_WAITING_FOR_SYNC || statusCopy < lengthPlusThree)
         return ROBONET_BUSY;
+
+    status = STATUS_WAITING_FOR_SYNC;
+
+    if (statusCopy > lengthPlusThree)
+        return ROBONET_BUFFER_OVERRUN_ERROR;
 
     uint8_t crc = packet_crc();
     if (robonetBuffer.data[robonetBuffer.length] != crc)
-    {
-        status = 0;
         return ROBONET_CRC_ERROR;
-    }
 
-    status = 0;
+    uint8_t deviceAddress = robonetBuffer.address & 0x0f;
+    if (deviceAddress != ROBONET_OWN_ADDRESS && deviceAddress != ROBONET_BROADCAST_ADDRESS)
+        return ROBONET_BUSY; // We ignore packets not belonging to us
+
     return ROBONET_OK;
 }
 
 uint8_t robonet_receive_complete()
 {
-    if (status != 0)
+    if (status != STATUS_WAITING_FOR_SYNC)
         return ROBONET_BUFFER_OVERRUN_ERROR;
     return ROBONET_OK;
 }
 
 void robonet_transmit()
 {
-    uint8_t crc = 0;
-
     PORT_DIRECTION |= _BV(NUMBER_DIRECTION);
-    UCSRB |= _BV(TXB8);
 
-    uint8_t* data = (uint8_t*)&robonetBuffer;
+    UDR = SYNC_BYTE;
+    while (!(UCSRA & _BV(UDRE)));
 
-    for (int i = 0; i < robonetBuffer.length + 2; ++i)
+    uint8_t crc = crc_update(0, SYNC_BYTE);
+    uint8_t count = robonetBuffer.length + 2;
+    uint8_t* data = (uint8_t*)(&robonetBuffer);
+    for (uint8_t i = 0; i < count; ++i)
     {
         uint8_t byte = *data++;
         UDR = byte;
-        crc = _crc_ibutton_update(crc, byte);
+        crc = crc_update(crc, byte);
         while (!(UCSRA & _BV(UDRE)));
-
-        UCSRB &= ~_BV(TXB8);
     }
 
     UDR = crc;
@@ -132,30 +155,15 @@ ISR(USART_RXC_vect)
 
     register uint8_t statusCopy = status;
 
-    if (statusCopy == 255)
-        return;
-    else if (statusCopy == 0)
+    if (statusCopy == STATUS_WAITING_FOR_SYNC)
     {
-        uint8_t targetAddress = received & 0x0f;
-        if (targetAddress != ROBONET_OWN_ADDRESS && targetAddress != ROBONET_BROADCAST_ADDRESS)
-        {
+        if (received != SYNC_BYTE)
             return;
-        }
-
-        UCSRA &= ~_BV(MPCM);
     }
-    else if (UCSRB & _BV(TXB8))
+    else
     {
-        // there is a sync byte when we're not expecting it, this packet is lost
-        status = 0xff;
-        UCSRA |= _BV(MPCM);
-        return;
+        ((uint8_t*)(&robonetBuffer))[statusCopy] = received;
     }
 
-    ((uint8_t*)(&robonetBuffer))[statusCopy++] = received;
-
-    if (statusCopy >= robonetBuffer.length + 3)
-        UCSRA |= _BV(MPCM);
-
-    status = statusCopy;
+    status = statusCopy + 1;
 }

@@ -15,6 +15,10 @@ class RoboNetCRCException(RoboNetException):
 
 
 class RoboNetPacket:
+    _sync_byte = 0x55
+    _master_address = 0x00
+    _max_data_size = 15
+
     @classmethod
     def wrap(cls, arg):
         if type(arg) == cls:
@@ -37,7 +41,7 @@ class RoboNetPacket:
         return bytes(self)[-1]
 
     def __bytes__(self):
-        without_crc = bytes([self.address, len(self.data)]) + self.data
+        without_crc = bytes([self._sync_byte, self.address, len(self.data)]) + self.data
         return without_crc + bytes([self._crc_fun(without_crc)])
 
 
@@ -48,60 +52,29 @@ class RoboNet:
     windows pyserial and slightly limits error checking.
     But the CRC should be strong enough by itself. """
 
-    CMSPAR = 0o010000000000
-
     def __init__(self, port, baudrate):
         self._port = serial.Serial(port, baudrate)
-
-        iflag, oflag, cflag, lflag, ispeed, ospeed, cc = termios.tcgetattr(self._port.fd)
-
-        cflag |= termios.PARENB # enable parity
-        cflag |= self.CMSPAR # enable sticky parity
-        cflag &= ~termios.PARODD # space parity by default
-        iflag |= termios.IGNPAR # ignore parity on received bytes
-
-        self._mark_attrs = [iflag,
-                            oflag,
-                            cflag | termios.PARODD,
-                            lflag,
-                            ispeed,
-                            ospeed,
-                            cc]
-        self._space_attrs = [iflag,
-                             oflag,
-                             cflag,
-                             lflag,
-                             ispeed,
-                             ospeed,
-                             cc]
-        self._set_space();
-
-    def _set_mark(self):
-        self._port.flush() #maybe flush isn't necessary with TCSADRAIN?
-        termios.tcsetattr(self._port.fd, termios.TCSADRAIN, self._mark_attrs)
-
-    def _set_space(self):
-        self._port.flush()
-        termios.tcsetattr(self._port.fd, termios.TCSADRAIN, self._space_attrs)
 
     def send_packet(self, packet):
         """Send a single packet, don't wait for reply."""
         packet = bytes(packet)
-
-        #self._port.setDTR(False)
-        #self._port.setRTS(True)
-        self._set_mark()
-        self._port.write(packet[0:1])
-        self._set_space()
-        self._port.write(packet[1:])
+        self._port.write(packet)
         self._port.flush()
-        #self._port.setDTR(True)
-        #self._port.setRTS(False)
 
     def receive_packet(self):
         """Receive and return a single packet."""
-        address = self._port.read(1)[0]
-        length = self._port.read(1)[0]
+        sync, address, length = self._port.read(3)
+
+        if sync != RoboNetPacket._sync_byte:
+            self._port.flushInput()
+            raise RoboNetException("Sync byte not found (received header: {})", str([sync, address, length]))
+        if address != RoboNetPacket._master_address:
+            self._port.flushInput()
+            raise RoboNetException("Reply address is not 0x00 (received header: {})", str([sync, address, length]))
+        if length > RoboNetPacket._max_data_size:
+            self._port.flushInput()
+            raise RoboNetException("Data size too large (received header: {})", str([sync, address, length]))
+
         data = self._port.read(length + 1)
         packet = RoboNetPacket(address, data[:-1])
         if packet.correct_crc() != data[-1]:

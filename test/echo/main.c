@@ -14,6 +14,7 @@ int main()
         if (status == ROBONET_BUSY)
             continue;
 
+        robonetBuffer.address = ROBONET_MASTER_ADDRESS;
         for (int8_t i = robonetBuffer.length + 3; i >= 0; --i)
         {
             robonetBuffer.data[i] = ((uint8_t*)&robonetBuffer)[i];

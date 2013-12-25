@@ -159,6 +159,7 @@ def _generate_source(interface, header_filename, f):
         f(');')
         f.dedent()
         f('robonetBuffer.length = {};', len(rr.response))
+        f('robonetBuffer.adderss = ROBONET_MASTER_ADDRESS;')
         f('robonet_transmit();')
         f('break;')
         f.dedent()

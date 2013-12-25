@@ -1,5 +1,5 @@
 This directory contains an implementation of a communication protocol based on
-(and probably mostly compatible with) 9 bit version of Martin Locker's RoboNet protocol:
+(and probably mostly compatible with) 8 bit version of Martin Locker's RoboNet protocol:
 http://wiki.robotika.cz/dispatch.fcgi/KomunikacniProtokol
 
 The protocol is works in half-duplex mode, with master initiating all communication.
