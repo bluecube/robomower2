@@ -1,7 +1,7 @@
 from .interface import Interface
 
 class MultiInterfaceProxy:
-    def __init__(self, interfaces, robonet):
+    def __init__(self, interfaces, robonet, checkStatus = True):
         self._robonet = robonet
 
         self._interfaces = {}
@@ -11,7 +11,8 @@ class MultiInterfaceProxy:
 
         self.broadcast = _MultiBroadcastProxy(self._interfaces, robonet)
 
-        self.check_status()
+        if checkStatus:
+            self.check_status()
 
     def __getattr__(self, name):
         if name not in self._interfaces:
@@ -21,7 +22,7 @@ class MultiInterfaceProxy:
 
     def check_status(self):
         for name in self._interfaces:
-            getattr(self, name)._check_status()
+            getattr(self, name).check_status()
 
 
 class Proxy:
@@ -30,7 +31,7 @@ class Proxy:
         self._robonet = robonet
         self._address = address
         if checkStatus:
-            self._check_status()
+            self.check_status()
 
     def __getattr__(self, name):
         if name in self._interface.broadcast:
@@ -40,7 +41,7 @@ class Proxy:
         else:
             raise AttributeError("{} is not a member of an interface".format(name))
 
-    def _check_status(self):
+    def check_status(self):
         response = getattr(self, 'status')()
 
         if response['interface_checksum'] != self._interface.checksum:

@@ -83,7 +83,7 @@ class Structure:
             packed.append(member.pack(value))
 
         result = b''.join(packed);
-        assert len(packed) == len(self)
+        assert len(result) == len(self)
         return result
 
     def unpack(self, packed):
