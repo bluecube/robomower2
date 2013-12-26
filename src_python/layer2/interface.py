@@ -74,6 +74,7 @@ class Structure:
 
         result = b''.join(packed);
         assert len(packed) == len(self)
+        return result
 
     def unpack(self, packed):
         result = collections.OrderedDict();
@@ -85,7 +86,8 @@ class Structure:
         return result
 
 class RequestResponse:
-    def __init__(self, automatic = False):
+    def __init__(self, id, automatic = False):
+        self.id = id
         self.request = None
         self.response = None
         self.automatic = automatic
@@ -96,7 +98,8 @@ class RequestResponse:
 
 
 class Broadcast:
-    def __init__(self, automatic = False):
+    def __init__(self, id, automatic = False):
+        self.id = id
         self.broadcast = None
         self.automatic = automatic
 
@@ -106,6 +109,13 @@ class Broadcast:
 
 class Interface:
     crc_fun = crcmod.predefined.mkPredefinedCrcFun('crc-8-maxim')
+
+    @classmethod
+    def wrap(cls, arg):
+        if type(arg) == cls:
+            return arg
+        else:
+            return cls(arg)
 
     def __init__(self, filename):
         self.filename = filename
@@ -118,13 +128,12 @@ class Interface:
         self._parse(filename)
 
     def _automatic_rr(self):
-        status = RequestResponse(True)
-        self.request_response['status'] = status
-
+        status = RequestResponse(len(self.request_response), True)
         status.request = Structure({})
         status.response = Structure(collections.OrderedDict([
             ('status', 'uint8'),
             ('interface_checksum', 'uint8')]))
+        self.request_response['status'] = status
 
     def _parse(self, filename):
         parser = configparser.ConfigParser(interpolation=None)
@@ -152,18 +161,18 @@ class Interface:
 
         for section, content in parser.items():
             if section.startswith('request:'):
-                request_response = self.request_response.setdefault(section[len('request:'):], RequestResponse())
+                request_response = self.request_response.setdefault(section[len('request:'):], RequestResponse(len(self.request_response)))
                 if request_response.request is not None:
                     raise ValueError("Multiple occurences of " + section)
                 request_response.request = Structure(content)
             elif section.startswith('response:'):
-                request_response = self.request_response.setdefault(section[len('response:'):], RequestResponse())
+                request_response = self.request_response.setdefault(section[len('response:'):], RequestResponse(len(self.request_response)))
                 if request_response.response is not None:
                     raise ValueError("Multiple occurences of " + section)
                 request_response.response = Structure(content)
             elif section.startswith('broadcast:'):
-                broadcast = self.broadcast.setdefault(section[len('broadcast:'):], Broadcast())
-                if broadcast.broadcast:
+                broadcast = self.broadcast.setdefault(section[len('broadcast:'):], Broadcast(len(self.broadcast)))
+                if broadcast.broadcast is not None:
                     raise ValueError("Multiple occurences of " + section)
                 broadcast.broadcast = Structure(content)
 

@@ -140,8 +140,8 @@ def _generate_source(interface, header_filename, f):
     f('switch (robonetBuffer.address)')
     f.open_brace()
 
-    for i, (name, rr) in enumerate(interface.request_response.items()):
-        f('case ROBONET_OWN_ADDRESS | 0x{:02x}:', i << 4)
+    for name, rr in interface.request_response.items():
+        f('case ROBONET_OWN_ADDRESS | 0x{:02x}:', rr.id << 4)
         f.indent()
         f('if (robonetBuffer.length != {})', len(rr.request))
         f.open_brace()
@@ -165,8 +165,8 @@ def _generate_source(interface, header_filename, f):
         f.dedent()
         f()
 
-    for i, (name, broadcast) in enumerate(interface.broadcast.items()):
-        f('case ROBONET_BROADCAST_ADDRESS | 0x{:02x}:', i << 4)
+    for name, broadcast in interface.broadcast.items():
+        f('case ROBONET_BROADCAST_ADDRESS | 0x{:02x}:', broadcast.id << 4)
         f.indent()
         f('if (robonetBuffer.length != {})', len(broadcast.broadcast))
         f.open_brace()

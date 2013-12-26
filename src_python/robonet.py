@@ -15,10 +15,6 @@ class RoboNetCRCException(RoboNetException):
 
 
 class RoboNetPacket:
-    _sync_byte = 0x55
-    _master_address = 0x00
-    _max_data_size = 15
-
     @classmethod
     def wrap(cls, arg):
         if type(arg) == cls:
@@ -41,7 +37,7 @@ class RoboNetPacket:
         return bytes(self)[-1]
 
     def __bytes__(self):
-        without_crc = bytes([self._sync_byte, self.address, len(self.data)]) + self.data
+        without_crc = bytes([RoboNet.sync_byte, self.address, len(self.data)]) + self.data
         return without_crc + bytes([self._crc_fun(without_crc)])
 
 
@@ -51,6 +47,19 @@ class RoboNet:
     by doing some black magic with termios, this makes the code incompatible with
     windows pyserial and slightly limits error checking.
     But the CRC should be strong enough by itself. """
+
+    sync_byte = 0x55
+    master_address = 0x0
+    broadcast_address = 0xf
+    max_data_size = 15
+
+    @staticmethod
+    def combine_address(device, function):
+        if device != device & 0xf:
+            raise ValueError("Device ID must be between 0 and 15")
+        if function != function & 0xf:
+            raise ValueError("Function ID must be between 0 and 15")
+        return device | (function << 4)
 
     def __init__(self, port, baudrate):
         self._port = serial.Serial(port, baudrate)
@@ -65,13 +74,13 @@ class RoboNet:
         """Receive and return a single packet."""
         sync, address, length = self._port.read(3)
 
-        if sync != RoboNetPacket._sync_byte:
+        if sync != RoboNet.sync_byte:
             self._port.flushInput()
             raise RoboNetException("Sync byte not found (received header: {})", str([sync, address, length]))
-        if address != RoboNetPacket._master_address:
+        if address != RoboNet.master_address:
             self._port.flushInput()
             raise RoboNetException("Reply address is not 0x00 (received header: {})", str([sync, address, length]))
-        if length > RoboNetPacket._max_data_size:
+        if length > RoboNet.max_data_size:
             self._port.flushInput()
             raise RoboNetException("Data size too large (received header: {})", str([sync, address, length]))
 
