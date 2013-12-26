@@ -1,6 +1,6 @@
 import serial
 import crcmod.predefined
-import termios
+import time
 
 class RoboNetException(Exception):
     pass
@@ -53,6 +53,8 @@ class RoboNet:
     broadcast_address = 0xf
     max_data_size = 15
 
+    timeout = 0.1
+
     @staticmethod
     def combine_address(device, function):
         if device != device & 0xf:
@@ -73,7 +75,13 @@ class RoboNet:
 
     def receive_packet(self):
         """Receive and return a single packet."""
+
+        end_time = time.time() + self.timeout
+
+        self._port.timeout = self.timeout
         header = self._port.read(3)
+        if len(header) < 3:
+            raise RoboNetException("Timed out")
         header_str = ' '.join("{:02x}".format(x) for x in header)
         print("received: " + header_str, end=' ... ')
         sync, address, length = header
@@ -92,7 +100,11 @@ class RoboNet:
             print()
             raise
 
+        self._port.timeout = end_time - time.time()
+
         data = self._port.read(length + 1)
+        if len(data) < length + 1:
+            raise RoboNetException("Timed out")
         print(' '.join("{:02x}".format(x) for x in data))
         packet = RoboNetPacket(address, data[:-1])
         if packet.correct_crc() != data[-1]:
