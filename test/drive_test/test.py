@@ -19,10 +19,8 @@ joystick.init()
 
 while True:
     pygame.event.pump()
-    value = 127 * joystick.get_axis(0)
+    value = int(127 * joystick.get_axis(0))
 
-    packet = robonet.RoboNetPacket(1, struct.pack('b', int(value)))
-    print("sending: " + str([hex(x) for x in bytes(packet)]))
-    answer = r.send_message(packet)
+    print(proxy.drive.update(value)['distance'])
 
     time.sleep(0.1)
