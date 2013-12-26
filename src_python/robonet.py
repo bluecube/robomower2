@@ -67,24 +67,33 @@ class RoboNet:
     def send_packet(self, packet):
         """Send a single packet, don't wait for reply."""
         packet = bytes(packet)
+        print("sending: " + ' '.join("{:02x}".format(x) for x in packet))
         self._port.write(packet)
         self._port.flush()
 
     def receive_packet(self):
         """Receive and return a single packet."""
-        sync, address, length = self._port.read(3)
+        header = self._port.read(3)
+        header_str = ' '.join("{:02x}".format(x) for x in header)
+        print("received: " + header_str, end=' ... ')
+        sync, address, length = header
 
-        if sync != RoboNet.sync_byte:
-            self._port.flushInput()
-            raise RoboNetException("Sync byte not found (received header: {})", str([sync, address, length]))
-        if address != RoboNet.master_address:
-            self._port.flushInput()
-            raise RoboNetException("Reply address is not 0x00 (received header: {})", str([sync, address, length]))
-        if length > RoboNet.max_data_size:
-            self._port.flushInput()
-            raise RoboNetException("Data size too large (received header: {})", str([sync, address, length]))
+        try:
+            if sync != RoboNet.sync_byte:
+                self._port.flushInput()
+                raise RoboNetException("Sync byte not found (received header: {})".format(header_str))
+            if address != RoboNet.master_address:
+                self._port.flushInput()
+                raise RoboNetException("Reply address is not 0x00 (received header: {})".format(header_str))
+            if length > RoboNet.max_data_size:
+                self._port.flushInput()
+                raise RoboNetException("Data size too large (received header: {})".format(header_str))
+        except:
+            print()
+            raise
 
         data = self._port.read(length + 1)
+        print(' '.join("{:02x}".format(x) for x in data))
         packet = RoboNetPacket(address, data[:-1])
         if packet.correct_crc() != data[-1]:
             raise RoboNetCRCException(packet, data[-1])
