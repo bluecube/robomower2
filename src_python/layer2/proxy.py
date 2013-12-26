@@ -56,10 +56,10 @@ class _MultiBroadcastProxy:
         self._robonet = robonet
 
         self._broadcasts = {}
-        broadcast_id = {}
+        broadcast_ids = {}
 
         for addr, interface in interfaces.values():
-            for broadcast_name, broadcast in interface.broadcast:
+            for broadcast_name, broadcast in interface.broadcast.items():
                 if broadcast.id in broadcast_ids:
                     duplicate_name, duplicate_broadcast = broadcast_ids[i]
                     if duplicate_name != broadcast_name or duplicate_broadcast != broadcast:
@@ -67,7 +67,7 @@ class _MultiBroadcastProxy:
                     else:
                         continue
                 self._broadcasts[broadcast_name] = broadcast
-                broadcast_ids[i] = (broadcast_name, broadcast)
+                broadcast_ids[broadcast.id] = (broadcast_name, broadcast)
 
     def __getattr__(self, name):
         if name not in self._broadcasts:
