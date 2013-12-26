@@ -3,6 +3,7 @@ import collections
 import os.path
 import crcmod.predefined
 import re
+import struct
 
 class Type:
     regexp = re.compile(r"(u?)int(\d+)")
@@ -15,6 +16,15 @@ class Type:
 
         if self.size not in {8, 16, 32}:
             raise ValueError("Only 8, 16 or 32 bit numbers are supported")
+
+        self._struct_arg = "<" + {
+            (8, True): "B",
+            (8, False): "b",
+            (16, True): "H",
+            (16, False): "h",
+            (32, True): "I",
+            (32, False): "i",
+            }[(self.size, self.unsigned)]
 
     def __str__(self):
         if self.unsigned:
@@ -30,10 +40,10 @@ class Type:
         return self.size // 8
 
     def pack(self, value):
-        return b''
+        return struct.pack(self._struct_arg, value)
 
     def unpack(self, data):
-        return 0
+        return struct.unpack(self._struct_arg, data)[0]
 
 class Structure:
     def __init__(self, content):
@@ -79,7 +89,7 @@ class Structure:
     def unpack(self, packed):
         result = collections.OrderedDict();
         offset = 0;
-        for name, member in self.members:
+        for name, member in self.members.items():
             end_offset = offset + len(member)
             result[name] = member.unpack(packed[offset:end_offset])
             offset = end_offset
