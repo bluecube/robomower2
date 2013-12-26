@@ -17,37 +17,37 @@ class MultiInterfaceProxy:
         if name not in self._interfaces:
             raise AttributeError("{} is not a name of an interface".format(name))
         address, interface = self._interfaces[name]
-        return Proxy(interface, address, self._robonet)
+        return Proxy(interface, address, self._robonet, False)
 
     def check_status(self):
-        for address, interface in self._interfaces.values():
-            Proxy(interface, address, self._robonet)._check_status()
+        for name in self._interfaces:
+            getattr(self, name)._check_status()
 
 
 class Proxy:
-    def __init__(self, interface, address, robonet):
+    def __init__(self, interface, address, robonet, checkStatus = True):
         self._interface = Interface.wrap(interface)
         self._robonet = robonet
         self._address = address
+        if checkStatus:
+            self._check_status()
 
     def __getattr__(self, name):
         if name in self._interface.broadcast:
             return _BroadcastHelper(self._robonet, broadcast)
         elif name in self._interface.request_response:
-            return _RequestHelper(self._robonet, self._address, self._interface.request_response[name])
+            return _RequestHelper(self._interface.request_response[name], self._address, self._robonet)
         else:
             raise AttributeError("{} is not a member of an interface".format(name))
 
     def _check_status(self):
-        request_func = _RequestHelper(self._interface.request_response['status'], self._address, self._robonet)
+        response = getattr(self, 'status')()
 
-        response = request_func()
-
-        if response.interface_checksum != interface.checksum:
+        if response['interface_checksum'] != self._interface.checksum:
             raise Exception("Invalid interface checksum for device {} (local = {}, remote = {})".format(
-                            name, interface_checksum, response.interface.checksum))
-        if response.status != 0:
-            raise Exception("Device {} reports status {}".format(name, response.status))
+                            name, self._interface.checksum, response['interface.checksum']))
+        if response['status'] != 0:
+            raise Exception("Device {} reports status {}".format(name, response['status']))
 
 
 class _MultiBroadcastProxy:
