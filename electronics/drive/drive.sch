@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.2">
+<eagle version="6.5.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="yes"/>
@@ -7572,6 +7572,7 @@ Source: avr.lbr</description>
 <part name="P+6" library="supply1" deviceset="+5V" device=""/>
 <part name="R3" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
 <part name="P+9" library="supply1" deviceset="+5V" device=""/>
+<part name="P+10" library="supply1" deviceset="+5V" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -7610,6 +7611,7 @@ Source: avr.lbr</description>
 <instance part="P+6" gate="1" x="-17.78" y="96.52"/>
 <instance part="R3" gate="G$1" x="-12.7" y="7.62" rot="R180"/>
 <instance part="P+9" gate="1" x="5.08" y="96.52"/>
+<instance part="P+10" gate="1" x="15.24" y="-30.48" rot="R270"/>
 </instances>
 <busses>
 </busses>
@@ -7741,6 +7743,11 @@ Source: avr.lbr</description>
 <wire x1="5.08" y1="91.44" x2="5.08" y2="93.98" width="0.1524" layer="91"/>
 <pinref part="R1" gate="G$1" pin="2"/>
 <pinref part="P+9" gate="1" pin="+5V"/>
+</segment>
+<segment>
+<pinref part="J1" gate="G$1" pin="2"/>
+<pinref part="P+10" gate="1" pin="+5V"/>
+<wire x1="12.7" y1="-30.48" x2="7.62" y2="-30.48" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="SERVO" class="0">
@@ -7891,8 +7898,8 @@ Source: avr.lbr</description>
 <approved hash="104,1,63.5,43.18,IC1,VCC,+5V,,,"/>
 <approved hash="104,1,63.5,71.12,IC1,AVCC,+5V,,,"/>
 <approved hash="104,1,193.04,-7.62,IC2P,VCC,+5V,,,"/>
-<approved hash="115,1,-28.6173,25.2053,JP1,,,,,"/>
-<approved hash="115,1,-26.0773,6.54473,JP2,,,,,"/>
+<approved hash="113,1,-28.6173,25.2053,JP1,,,,,"/>
+<approved hash="113,1,-26.0773,6.54473,JP2,,,,,"/>
 </errors>
 </schematic>
 </drawing>
