@@ -1,0 +1,2 @@
+Reject packets without putting them to buffer on AVR robonet.
+
