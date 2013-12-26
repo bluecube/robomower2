@@ -34,6 +34,8 @@ void robonet_init()
 
     DDR_DIRECTION |= _BV(NUMBER_DIRECTION); // TXEN
     PORTD |= _BV(PD0); // enable pull-up on the RX pin
+
+    status = STATUS_WAITING_FOR_SYNC;
 }
 
  __attribute__((const,always_inline))
