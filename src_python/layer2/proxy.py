@@ -46,9 +46,9 @@ class Proxy:
 
         if response['interface_checksum'] != self._interface.checksum:
             raise Exception("Invalid interface checksum for device {} (local = {}, remote = {})".format(
-                            name, self._interface.checksum, response['interface.checksum']))
+                            self._address, self._interface.checksum, response['interface.checksum']))
         if response['status'] != 0:
-            raise Exception("Device {} reports status {}".format(name, response['status']))
+            raise Exception("Device {} reports status {}".format(self._address, response['status']))
 
 
 class _MultiBroadcastProxy:
