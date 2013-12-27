@@ -7568,7 +7568,7 @@ Source: avr.lbr</description>
 <part name="P+7" library="supply1" deviceset="+5V" device=""/>
 <part name="P+8" library="supply1" deviceset="+5V" device=""/>
 <part name="GND8" library="supply1" deviceset="GND" device=""/>
-<part name="R2" library="rcl" deviceset="R-EU_" device="R0805" value="12k"/>
+<part name="R2" library="rcl" deviceset="R-EU_" device="R0805" value="33k"/>
 <part name="P+6" library="supply1" deviceset="+5V" device=""/>
 <part name="R3" library="rcl" deviceset="R-EU_" device="R0805" value="1k"/>
 <part name="P+9" library="supply1" deviceset="+5V" device=""/>
