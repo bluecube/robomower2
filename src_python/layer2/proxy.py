@@ -80,7 +80,7 @@ class _BroadcastHelper:
     def __init__(self, robonet, broadcast):
         self._robonet = robonet
         self._broadcast = broadcast
-        self._address = robonet.combine_address(self.robonet.broadcast_address,
+        self._address = robonet.combine_address(self._robonet.broadcast_address,
                                                 broadcast.id)
 
     def __call__(self, *args, **kwargs):

@@ -116,7 +116,7 @@ class RoboNet:
 
         packet = RoboNetPacket.wrap(packet)
 
-        if packet.address_device() != 0:
+        if packet.address_device() != self.broadcast_address:
             raise RoboNetException("This is not a broadcast packet")
 
         self.send_packet(packet)
@@ -127,7 +127,7 @@ class RoboNet:
 
         packet = RoboNetPacket.wrap(packet)
 
-        if packet.address_device() == 0:
+        if packet.address_device() == self.broadcast_address:
             raise RoboNetException("This is a broadcast packet")
 
         self._port.flushInput()
