@@ -21,6 +21,7 @@ while True:
     pygame.event.pump()
     value = int(127 * joystick.get_axis(0))
 
+    proxy.broadcast.latch_values()
     print(proxy.drive.update(value)['distance'])
 
     time.sleep(0.1)

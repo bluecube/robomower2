@@ -7,4 +7,4 @@ include = broadcast.interface
 speed = int8
 
 [response:update]
-distance = int16
+distance = uint16

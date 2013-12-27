@@ -52,10 +52,10 @@ static inline uint16_t latch_encoder_ticks(uint16_t* state)
     uint16_t oldState = *state;
     *state = newState.u16;
 
-    if (oldState < newState.u16)
-        return oldState - newState.u16;
+    if (oldState <= newState.u16)
+        return newState.u16 - oldState;
     else // An overflow occured
-        return oldState - newState.u16 + UINT16_MAX;
+        return newState.u16 - oldState + UINT16_MAX;
 }
 
 int main()
@@ -82,7 +82,7 @@ void handle_update_request(const struct update_request* in,
 
 void handle_latch_values_broadcast()
 {
-    odometryTicks = latch_encoder_ticks(&odometryTicks);
+    odometryTicks = latch_encoder_ticks(&odometryTicksState);
 }
 
 ISR(TIMER0_OVF_vect)
