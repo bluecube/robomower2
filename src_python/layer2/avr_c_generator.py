@@ -114,7 +114,7 @@ def _generate_source(interface, header_filename, f):
                           f, extra_specifier = "static")
     f.open_brace()
     f('out->status = layer2Status;')
-    f('out->interface_checksum = 0x{:02x};', interface.checksum)
+    f('out->interfaceChecksum = 0x{:02x};', interface.checksum)
     f.close_brace()
     f()
 

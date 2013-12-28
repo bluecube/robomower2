@@ -142,7 +142,7 @@ class Interface:
         status.request = Structure({})
         status.response = Structure(collections.OrderedDict([
             ('status', 'uint8'),
-            ('interface_checksum', 'uint8')]))
+            ('interfaceChecksum', 'uint8')]))
         self.request_response['status'] = status
 
     def _parse(self, filename):

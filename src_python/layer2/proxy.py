@@ -44,9 +44,9 @@ class Proxy:
     def check_status(self):
         response = getattr(self, 'status')()
 
-        if response['interface_checksum'] != self._interface.checksum:
+        if response['interfaceChecksum'] != self._interface.checksum:
             raise Exception("Invalid interface checksum for device {} (local = {}, remote = {})".format(
-                            self._address, self._interface.checksum, response['interface.checksum']))
+                            self._address, self._interface.checksum, response['interfaceChecksum']))
         if response['status'] != 0:
             raise Exception("Device {} reports status {}".format(self._address, response['status']))
 
