@@ -17,10 +17,12 @@ joystick = pygame.joystick.Joystick(0)
 
 joystick.init()
 
+proxy.drive.params(kP = 0.1, kI = 0, integratorLimit = 0)
+
 prev_t = 0
 while True:
     pygame.event.pump()
-    value = int(127 * joystick.get_axis(0))
+    value = int(32 * joystick.get_axis(0))
 
     proxy.broadcast.latch_values()
     t = time.time()

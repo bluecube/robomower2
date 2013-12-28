@@ -4,6 +4,8 @@
 #include "servo/servo.h"
 #include "build/drive.interface.h"
 
+#define DIRECTION_CHANGE_ZERO_CYCLE_COUNT 20
+
 union byteaccess
 {
     uint16_t u16;
@@ -19,8 +21,22 @@ volatile uint8_t ticksHigh;
 
 volatile int8_t requestedSpeed; // Units are ticks per SERVO_PERIOD
 volatile int8_t requestedSpeedDirection;
+volatile int8_t currentSpeedDirection;
+volatile uint8_t needStopCycles;
 
-volatile int16_t kP, kI, kD;
+volatile int8_t servoOutput;
+volatile int16_t kP, kI;
+volatile int16_t integratorLimit;
+volatile int16_t integratorState;
+
+int16_t clamp(int16_t val, int16_t min, int16_t max)
+{
+    if (val < min)
+        return min;
+    if (val > max)
+        return max;
+    return val;
+}
 
 /** Atomically read both lower and upper (extended by software) part of the encoder
  * tick counter and update the struct latched_value.
@@ -68,7 +84,8 @@ int main()
 {
     // Timer0 (counting encoder pulses)
     TCCR0 |= _BV(CS02) | _BV(CS01) | _BV(CS00); // external clock source for TCNT0, rising edge
-    TIMSK |= _BV(TOIE0); // Enable overflow interrupt on TCNT0
+    TIMSK |= _BV(TOIE0) | // Enable overflow interrupt on TCNT0
+             _BV(TOIE1); // Enable overflow interrupt on TCNT1 (used by the servo library)
 
     layer2_init();
     servo_init();
@@ -82,20 +99,42 @@ int main()
 void handle_update_request(const struct update_request* in,
                            struct update_response* out)
 {
-    servo_set(in->speed);
+    int16_t newDirection;
+    if (in->speed == 0)
+    {
+        requestedSpeedDirection = 0;
+    }
+    else if (in->speed > 0)
+    {
+        requestedSpeed = in->speed;
+        newDirection = 1;
+    }
+    else
+    {
+        requestedSpeed = -in->speed;
+        newDirection = -1;
+    }
+    if (currentSpeedDirection != 0 && newDirection != requestedSpeedDirection)
+        needStopCycles = DIRECTION_CHANGE_ZERO_CYCLE_COUNT;
+    requestedSpeedDirection = newDirection;
+
     out->distance = odometryTicks;
 }
 
-void handle_pid_request(const struct pid_request* in)
+void handle_params_request(const struct params_request* in)
 {
     kP = in->kP;
     kI = in->kI;
-    kD = in->kD;
+    integratorLimit = in->integratorLimit;
 }
 
 void handle_latch_values_broadcast()
 {
-    odometryTicks = latch_encoder_ticks(&odometryTicksState);
+    int16_t ticks = latch_encoder_ticks(&odometryTicksState);
+    if (currentSpeedDirection >= 0)
+        odometryTicks = ticks;
+    else
+        odometryTicks = -ticks;
 }
 
 ISR(TIMER0_OVF_vect)
@@ -105,8 +144,23 @@ ISR(TIMER0_OVF_vect)
 
 ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 {
-    int16_t ticks = latch_encoder_ticks(&pidTicksState);
-    int16_t error = ticks - requestedSpeed;
+    if (needStopCycles > 0)
+    {
+        --needStopCycles;
+        if (needStopCycles == 0)
+            currentSpeedDirection = requestedSpeedDirection;
+        servoOutput = 0;
+        servo_set(0);
+        return;
+    }
 
-    servo_set((error * kP) >> 8);
+    int16_t ticks = latch_encoder_ticks(&pidTicksState);
+    int16_t error = requestedSpeed - ticks;
+
+    integratorState = clamp(integratorState + error, -integratorLimit, integratorLimit);
+
+    int16_t tmpOutput = clamp(servoOutput + (error * kP + integratorState * kI) / 128,
+                              -INT8_MAX, INT8_MAX);
+    servoOutput = tmpOutput;
+    servo_set(servoOutput);
 }
