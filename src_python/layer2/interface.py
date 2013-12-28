@@ -6,13 +6,17 @@ import re
 import struct
 
 class Type:
-    regexp = re.compile(r"(u?)int(\d+)")
+    regexp = re.compile(r"(u?)int(\d+)(?:\((\d+)\))?")
     def __init__(self, typename):
         match = self.regexp.match(typename)
         if not match:
             raise ValueError("Invalid type name")
         self.unsigned = (match.group(1) == "u")
         self.size = int(match.group(2))
+        if match.group(3) is not None:
+            self.multiplier = int(match.group(3))
+        else:
+            self.multiplier = 1
 
         if self.size not in {8, 16, 32}:
             raise ValueError("Only 8, 16 or 32 bit numbers are supported")
@@ -40,10 +44,10 @@ class Type:
         return self.size // 8
 
     def pack(self, value):
-        return struct.pack(self._struct_arg, value)
+        return struct.pack(self._struct_arg, int(value * self.multiplier))
 
     def unpack(self, data):
-        return struct.unpack(self._struct_arg, data)[0]
+        return struct.unpack(self._struct_arg, data)[0] / self.multiplier
 
 class Structure:
     def __init__(self, content):
