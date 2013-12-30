@@ -1,10 +1,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 #include <stdint.h>
 #include "servo/servo.h"
 #include "build/drive.interface.h"
 
-#define DIRECTION_CHANGE_ZERO_CYCLE_COUNT 20
+#define DIRECTION_CHANGE_ZERO_CYCLE_COUNT 4
 
 union byteaccess
 {
@@ -31,10 +32,10 @@ volatile int16_t integratorState;
 
 int16_t clamp(int16_t val, int16_t min, int16_t max)
 {
-    if (val < min)
-        return min;
     if (val > max)
         return max;
+    if (val < min)
+        return min;
     return val;
 }
 
@@ -102,7 +103,8 @@ void handle_update_request(const struct update_request* in,
     int16_t newDirection;
     if (in->speed == 0)
     {
-        requestedSpeedDirection = 0;
+        requestedSpeed = 0;
+        newDirection = 0;
     }
     else if (in->speed > 0)
     {
@@ -114,9 +116,13 @@ void handle_update_request(const struct update_request* in,
         requestedSpeed = -in->speed;
         newDirection = -1;
     }
-    if (currentSpeedDirection != 0 && newDirection != requestedSpeedDirection)
-        needStopCycles = DIRECTION_CHANGE_ZERO_CYCLE_COUNT;
-    requestedSpeedDirection = newDirection;
+
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        if (currentSpeedDirection != 0 && newDirection != currentSpeedDirection)
+            needStopCycles = DIRECTION_CHANGE_ZERO_CYCLE_COUNT;
+        requestedSpeedDirection = newDirection;
+    }
 
     out->distance = odometryTicks;
 }
@@ -144,23 +150,27 @@ ISR(TIMER0_OVF_vect)
 
 ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 {
+    int16_t ticks = latch_encoder_ticks(&pidTicksState);
+
     if (needStopCycles > 0)
     {
-        --needStopCycles;
-        if (needStopCycles == 0)
-            currentSpeedDirection = requestedSpeedDirection;
-        servoOutput = 0;
+        if (ticks == 0)
+        {
+            --needStopCycles;
+            if (needStopCycles == 0)
+                currentSpeedDirection = requestedSpeedDirection;
+        }
         servo_set(0);
         return;
     }
 
-    int16_t ticks = latch_encoder_ticks(&pidTicksState);
     int16_t error = requestedSpeed - ticks;
 
     integratorState = clamp(integratorState + error, -integratorLimit, integratorLimit);
 
-    int16_t tmpOutput = clamp(servoOutput + (error * kP + integratorState * kI) / 128,
-                              -INT8_MAX, INT8_MAX);
-    servoOutput = tmpOutput;
-    servo_set(servoOutput);
+    int16_t tmpOutput = clamp((error * kP + integratorState * kI) / 256, 0, INT8_MAX);
+    if (currentSpeedDirection >= 0)
+        servo_set(tmpOutput);
+    else
+        servo_set(-tmpOutput);
 }
