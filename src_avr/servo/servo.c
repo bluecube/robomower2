@@ -42,14 +42,14 @@ void servo_set(int8_t value)
     /* This function contains a hackish way to do:
 
     OCR1A = SERVO_NEUTRAL_POSITION_TICKS +
-        (value * (SERVO_RANGE_TICKS / 2)) / 127;
+        (value * SERVO_RANGE_TICKS) / 127;
 
     while avoiding division and 32bit multiplication.
     The result is not optimal, but it's much better than what the compiler
     would generate by itself. */
 
-    int16_t multiplierHi = ROUNDED_DIVISION(SERVO_RANGE_TICKS / 2, INT8_MAX, 8) >> 8;
-    int16_t multiplierLo = ROUNDED_DIVISION(SERVO_RANGE_TICKS / 2, INT8_MAX, 8) & 0xFF;
+    int16_t multiplierHi = ROUNDED_DIVISION(SERVO_RANGE_TICKS, INT8_MAX, 8) >> 8;
+    int16_t multiplierLo = ROUNDED_DIVISION(SERVO_RANGE_TICKS, INT8_MAX, 8) & 0xFF;
 
     // We're doing (value * multiplier) >> 8, while avoiding 32bit multiplication
     int16_t tmp = ((multiplierLo * value) >> 8) + (multiplierHi * value);
