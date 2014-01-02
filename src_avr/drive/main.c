@@ -16,7 +16,7 @@ union byteaccess
 uint16_t odometryTicks;
 
 uint16_t odometryTicksState;
-uint16_t pidTicksState;
+uint8_t pidTicksState;
 
 volatile uint8_t ticksHigh;
 
@@ -40,16 +40,15 @@ int16_t clamp(int16_t val, int16_t min, int16_t max)
 }
 
 /** Atomically read both lower and upper (extended by software) part of the encoder
- * tick counter and update the struct latched_value.
+ * tick counter and return the number of ticks since the last call.
+ * Parameter state stores the state of the tick counter that corresponds to the value returned.
+ *
  * This function assumes that it finishes faster than is the period between encoder ticks
  * (at most one encoder tick may happen inside this function) and that it is executed with
  * interrupts enabled (because the counter high word is updated in an interrupt).
  * If these conditions are not met, then atomicity is lost and the low and high
- * bytes of the value might be desynchronized.
- *
- * This function is inline, because we want to avoid the indirect access to the state
- * variable and because there should be enough program space left on the device anyway. */
-static uint16_t latch_encoder_ticks(uint16_t* restrict state)
+ * bytes of the value might be desynchronized. */
+static uint16_t latch_encoder_ticks16(uint16_t* state)
 {
     union byteaccess newState;
 
@@ -75,10 +74,30 @@ static uint16_t latch_encoder_ticks(uint16_t* restrict state)
     uint16_t oldState = *state;
     *state = newState.u16;
 
-    if (oldState <= newState.u16)
-        return newState.u16 - oldState;
-    else // An overflow occured
-        return newState.u16 - oldState + UINT16_MAX;
+    uint16_t ret = newState.u16 - oldState;
+    if (oldState > newState.u16)
+        ret += UINT16_MAX;
+    return ret;
+}
+
+/** Atomically read both lower and upper (extended by software) part of the encoder
+ * tick counter and return the number of ticks since the last call.
+ * Parameter state stores the state of the tick counter that corresponds to the value returned.
+ *
+ * Works almost exactly like latch_encoder_ticks16, but trades maximal number of encoder
+ * ticks between state updates for speed and code size (both should be inlined). */
+static uint8_t latch_encoder_ticks8(uint8_t* restrict state)
+{
+    uint8_t newState = TCNT0;
+    // Reading 8bit variables is atomic, so there is no trickery involved here
+
+    uint8_t oldState = *state;
+    *state = newState;
+
+    uint8_t ret = newState - oldState;
+    if (oldState > newState)
+        ret += UINT8_MAX;
+    return ret;
 }
 
 int main()
@@ -136,7 +155,7 @@ void handle_params_request(const struct params_request* in)
 
 void handle_latch_values_broadcast()
 {
-    int16_t ticks = latch_encoder_ticks(&odometryTicksState);
+    int16_t ticks = latch_encoder_ticks16(&odometryTicksState);
     if (currentSpeedDirection >= 0)
         odometryTicks = ticks;
     else
@@ -150,7 +169,7 @@ ISR(TIMER0_OVF_vect)
 
 ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 {
-    int16_t ticks = latch_encoder_ticks(&pidTicksState);
+    int8_t ticks = latch_encoder_ticks8(&pidTicksState);
 
     if (needStopCycles > 0)
     {
@@ -167,7 +186,6 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
     int16_t error = requestedSpeed - ticks;
 
     integratorState = clamp(integratorState + error, -integratorLimit, integratorLimit);
-
     int16_t tmpOutput = clamp((error * kP + integratorState * kI) / 256, 0, INT8_MAX);
     if (currentSpeedDirection >= 0)
         servo_set(tmpOutput);
