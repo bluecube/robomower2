@@ -120,19 +120,20 @@ void handle_update_request(const struct update_request* in,
                            struct update_response* out)
 {
     int16_t newDirection;
+    int8_t newRequestedSpeed;
     if (in->speed == 0)
     {
-        requestedSpeed = 0;
+        newRequestedSpeed = 0;
         newDirection = 0;
     }
     else if (in->speed > 0)
     {
-        requestedSpeed = in->speed;
+        newRequestedSpeed = in->speed;
         newDirection = 1;
     }
     else
     {
-        requestedSpeed = -in->speed;
+        newRequestedSpeed = -in->speed;
         newDirection = -1;
     }
 
@@ -140,6 +141,7 @@ void handle_update_request(const struct update_request* in,
     {
         if (currentSpeedDirection != 0 && newDirection != currentSpeedDirection)
             needStopCycles = DIRECTION_CHANGE_ZERO_CYCLE_COUNT;
+        requestedSpeed = newRequestedSpeed;
         requestedSpeedDirection = newDirection;
     }
 
@@ -171,12 +173,14 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 {
     int8_t ticks = latch_encoder_ticks8(&pidTicksState);
 
-    if (needStopCycles > 0)
+    int8_t needStopCyclesCopy = needStopCycles;
+    if (needStopCyclesCopy > 0)
     {
         if (ticks == 0)
         {
-            --needStopCycles;
-            if (needStopCycles == 0)
+            needStopCyclesCopy--;
+            needStopCycles = needStopCyclesCopy;
+            if (needStopCyclesCopy == 0)
                 currentSpeedDirection = requestedSpeedDirection;
         }
         servo_set(0);
