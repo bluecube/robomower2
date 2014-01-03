@@ -2,6 +2,7 @@
 #include <avr/interrupt.h>
 #include <util/atomic.h>
 #include <stdint.h>
+#include "turnigy.h"
 #include "servo/servo.h"
 #include "build/drive.interface.h"
 
@@ -112,6 +113,9 @@ int main()
     layer2_init();
     servo_init();
     servo_enable();
+
+    //calibrate_turningy_esc(); // This has to be used without interrupts
+
     sei(); // bzzzzzzzzz........
 
     while(1)
