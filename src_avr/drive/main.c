@@ -26,7 +26,8 @@ int8_t requestedSpeed; // Units are ticks per SERVO_PERIOD
 int8_t requestedSpeedDirection;
 int8_t currentSpeedDirection;
 uint8_t needStopCycles;
-int16_t kP, kI;
+uint8_t lastTicks;
+int16_t kP, kI, kD;
 int16_t integratorLimit;
 int16_t integratorState;
 
@@ -191,9 +192,14 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
     }
 
     int16_t error = requestedSpeed - ticks;
+    int16_t difference = lastTicks - ticks;
+    lastTicks = ticks;
 
     integratorState = clamp(integratorState + error, -integratorLimit, integratorLimit);
-    int16_t tmpOutput = clamp(error * kP + integratorState * kI, 0, SERVO_RANGE_TICKS);
+    int16_t tmpOutput = clamp(error * kP +
+                              integratorState * kI +
+                              difference * kD,
+                              0, SERVO_RANGE_TICKS);
     if (currentSpeedDirection < 0)
         tmpOutput = -tmpOutput;
 

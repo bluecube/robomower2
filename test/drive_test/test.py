@@ -18,15 +18,15 @@ joystick = pygame.joystick.Joystick(0)
 joystick.init()
 
 #Ziegler nichols: kU = 60, tU = 0.22s
-proxy.drive.params(kP = 27, kI = 7, integratorLimit = 140)
-#proxy.drive.params(kP = 20, kI = 5, integratorLimit = 140)
+#proxy.drive.params(kP = 36, kI = 11, kD = 82, integratorLimit = 100)
+proxy.drive.params(kP = 36, kI = 1, kD = 82, integratorLimit = 100)
 
 try:
     prev_t = 0
     while True:
         pygame.event.pump()
         value = int(32 * joystick.get_axis(0))
-        value = 10
+        value = 5
 
         proxy.broadcast.latch_values()
         t = time.time()

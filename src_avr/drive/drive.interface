@@ -12,6 +12,7 @@ distance = int16
 [request:params]
 kP = int16
 kI = int16
+kD = int16
 integratorLimit = int16
 
 [response:params]
