@@ -25,15 +25,15 @@ try:
     while True:
         pygame.event.pump()
         value = int(32 * joystick.get_axis(0))
-        value = 5
 
         proxy.broadcast.latch_values()
         t = time.time()
 
         ticks = proxy.drive.update(value)['distance']
-        print("{:.2f} rpm ({} ticks)".format(60 * ticks / (8*(t - prev_t)), ticks))
+        print("{:.2f} rpm ({} ticks)                 ".format(60 * ticks / (8*(t - prev_t)), ticks), end='\r')
         prev_t = t
 
         time.sleep(0.1)
 finally:
+    print()
     proxy.drive.update(0)
