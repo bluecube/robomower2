@@ -30,9 +30,16 @@ try:
         t = time.time()
 
         ticks = proxy.drive.update(value)['distance']
-        print("{:.2f} rpm ({} ticks)                 ".format(60 * ticks / (8*(t - prev_t)), ticks), end='\r')
+        print("input: {: >3d} ; rpm: {: >8.2f} ; ticks: {: >3d} ; ticksPerFrame: {: >6.2f}                 ".format(
+            value,
+            60 * ticks / (8*(t - prev_t)),
+            ticks,
+            ticks / (50 * (t - prev_t))
+            ), end='\r')
         prev_t = t
 
         time.sleep(0.1)
+except KeyboardInterrupt:
+    pass
 finally:
     print()
