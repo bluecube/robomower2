@@ -20,14 +20,15 @@ uint8_t pidTicksState;
 
 volatile uint8_t ticksHigh;
 
-volatile int8_t requestedSpeed; // Units are ticks per SERVO_PERIOD
-volatile int8_t requestedSpeedDirection;
-volatile int8_t currentSpeedDirection;
-volatile uint8_t needStopCycles;
-
-volatile int16_t kP, kI;
-volatile int16_t integratorLimit;
-volatile int16_t integratorState;
+// The following variables don't need to be volatile, since these are
+// always set within ATOMIC block, or from within an interrupt
+int8_t requestedSpeed; // Units are ticks per SERVO_PERIOD
+int8_t requestedSpeedDirection;
+int8_t currentSpeedDirection;
+uint8_t needStopCycles;
+int16_t kP, kI;
+int16_t integratorLimit;
+int16_t integratorState;
 
 int16_t clamp(int16_t val, int16_t min, int16_t max)
 {
@@ -149,9 +150,12 @@ void handle_update_request(const struct update_request* in,
 
 void handle_params_request(const struct params_request* in)
 {
-    kP = in->kP;
-    kI = in->kI;
-    integratorLimit = in->integratorLimit;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        kP = in->kP;
+        kI = in->kI;
+        integratorLimit = in->integratorLimit;
+    }
 }
 
 void handle_latch_values_broadcast()
@@ -189,9 +193,9 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
     int16_t error = requestedSpeed - ticks;
 
     integratorState = clamp(integratorState + error, -integratorLimit, integratorLimit);
-    int16_t tmpOutput = clamp((error * kP + integratorState * kI) / 256, 0, INT8_MAX);
-    if (currentSpeedDirection >= 0)
-        servo_set(tmpOutput);
-    else
-        servo_set(-tmpOutput);
+    int16_t tmpOutput = clamp(error * kP + integratorState * kI, 0, SERVO_RANGE_TICKS);
+    if (currentSpeedDirection < 0)
+        tmpOutput = -tmpOutput;
+
+    servo_set16(tmpOutput);
 }

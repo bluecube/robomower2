@@ -10,8 +10,8 @@ speed = int8
 distance = int16
 
 [request:params]
-kP = int16(256)
-kI = int16(256)
+kP = int16
+kI = int16
 integratorLimit = int16
 
 [response:params]
