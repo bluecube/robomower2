@@ -24,8 +24,8 @@ volatile uint8_t ticksHigh;
 // The following variables don't need to be volatile, since these are
 // always set within ATOMIC block, or from within an interrupt
 int8_t requestedSpeed; // Units are ticks per SERVO_PERIOD
-int8_t requestedSpeedDirection;
-int8_t currentSpeedDirection;
+int8_t requestedDirection;
+int8_t currentDirection;
 uint8_t needStopCycles;
 uint8_t lastTicks;
 int16_t kP, kI, kD;
@@ -122,29 +122,31 @@ void handle_update_request(const struct update_request* in,
                            struct update_response* out)
 {
     int16_t newDirection;
-    int8_t newRequestedSpeed;
+    int8_t newSpeed;
     if (in->speed == 0)
     {
-        newRequestedSpeed = 0;
+        newSpeed = 0;
         newDirection = 0;
     }
     else if (in->speed > 0)
     {
-        newRequestedSpeed = in->speed;
+        newSpeed = in->speed;
         newDirection = 1;
     }
     else
     {
-        newRequestedSpeed = -in->speed;
+        newSpeed = -in->speed;
         newDirection = -1;
     }
 
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        if (currentSpeedDirection != 0 && newDirection != currentSpeedDirection)
+        if (currentDirection != 0 && newDirection != currentDirection)
             needStopCycles = DIRECTION_CHANGE_ZERO_CYCLE_COUNT;
-        requestedSpeed = newRequestedSpeed;
-        requestedSpeedDirection = newDirection;
+        else
+            currentDirection = newDirection;
+        requestedSpeed = newSpeed;
+        requestedDirection = newDirection;
         safetyCounter = SAFETY_TIMEOUT;
     }
 
@@ -163,10 +165,17 @@ void handle_params_request(const struct params_request* in)
 void handle_latch_values_broadcast()
 {
     int16_t ticks = latch_encoder_ticks16(&odometryTicksState);
-    if (currentSpeedDirection >= 0)
+    if (currentDirection >= 0)
         odometryTicks = ticks;
     else
         odometryTicks = -ticks;
+}
+
+void stop()
+{
+    servo_set(0);
+    integratorState = 0;
+    lastTicks = 0;
 }
 
 ISR(TIMER0_OVF_vect)
@@ -178,7 +187,7 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 {
     if (safetyCounter == 0)
     {
-        servo_set(0);
+        stop();
         return;
     }
     --safetyCounter;
@@ -193,9 +202,15 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
             needStopCyclesCopy--;
             needStopCycles = needStopCyclesCopy;
             if (needStopCyclesCopy == 0)
-                currentSpeedDirection = requestedSpeedDirection;
+                currentDirection = requestedDirection;
         }
-        servo_set(0);
+        stop();
+        return;
+    }
+
+    if (currentDirection == 0)
+    {
+        stop();
         return;
     }
 
@@ -209,7 +224,7 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
                               integratorState * kI +
                               difference * kD,
                               0, SERVO_RANGE_TICKS);
-    if (currentSpeedDirection < 0)
+    if (currentDirection < 0)
         tmpOutput = -tmpOutput;
 
     servo_set16(tmpOutput);
