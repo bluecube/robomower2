@@ -12,7 +12,7 @@ class _TunerState:
         self.kD = kD
 
     def upload_params(self, proxy):
-        proxy.params(kP = self.kP, kI = self.kI, kD = self.kD, integratorLimit = 1000)
+        proxy.params(kP = self.kP, kI = self.kI, kD = self.kD)
         print("setting params to " + str(self))
 
     def __str__(self):
