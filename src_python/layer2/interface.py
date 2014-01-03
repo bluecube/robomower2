@@ -38,6 +38,9 @@ class Type:
 
         ret += str(self.size)
 
+        if self.multiplier != 1:
+            ret += "({})".format(int(self.multiplier))
+
         return ret
 
     def __len__(self):
