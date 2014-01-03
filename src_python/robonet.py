@@ -1,6 +1,7 @@
 import serial
 import crcmod.predefined
 import time
+import logging
 
 class RoboNetException(Exception):
     pass
@@ -55,6 +56,8 @@ class RoboNet:
 
     timeout = 0.1
 
+    logger = logging.getLogger(__name__)
+
     @staticmethod
     def combine_address(device, function):
         if device != device & 0xf:
@@ -69,7 +72,7 @@ class RoboNet:
     def send_packet(self, packet):
         """Send a single packet, don't wait for reply."""
         packet = bytes(packet)
-        print("sending: " + ' '.join("{:02x}".format(x) for x in packet))
+        self.logger.debug("sending: %s", ' '.join("{:02x}".format(x) for x in packet))
         self._port.write(packet)
         self._port.flush()
 
@@ -83,7 +86,6 @@ class RoboNet:
         if len(header) < 3:
             raise RoboNetException("Timed out")
         header_str = ' '.join("{:02x}".format(x) for x in header)
-        print("received: " + header_str, end=' ... ')
         sync, address, length = header
 
         try:
@@ -96,16 +98,17 @@ class RoboNet:
             if length > RoboNet.max_data_size:
                 self._port.flushInput()
                 raise RoboNetException("Data size too large (received header: {})".format(header_str))
+
+            self._port.timeout = end_time - time.time()
+
+            data = self._port.read(length + 1)
+            if len(data) < length + 1:
+                raise RoboNetException("Timed out")
         except:
-            print()
+            self.logger.debug("received packet header: %s", header_str)
             raise
 
-        self._port.timeout = end_time - time.time()
-
-        data = self._port.read(length + 1)
-        if len(data) < length + 1:
-            raise RoboNetException("Timed out")
-        print(' '.join("{:02x}".format(x) for x in data))
+        self.logger.debug("received packet: %s %s", header_str, ' '.join("{:02x}".format(x) for x in data))
         packet = RoboNetPacket(address, data[:-1])
         if packet.correct_crc() != data[-1]:
             raise RoboNetCRCException(packet, data[-1])
