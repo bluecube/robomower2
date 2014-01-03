@@ -17,18 +17,24 @@ joystick = pygame.joystick.Joystick(0)
 
 joystick.init()
 
-proxy.drive.params(kP = 0.1, kI = 0, integratorLimit = 0)
+#Ziegler nichols: kU = 60, tU = 0.22s
+proxy.drive.params(kP = 27, kI = 7, integratorLimit = 140)
+#proxy.drive.params(kP = 20, kI = 5, integratorLimit = 140)
 
-prev_t = 0
-while True:
-    pygame.event.pump()
-    value = int(32 * joystick.get_axis(0))
+try:
+    prev_t = 0
+    while True:
+        pygame.event.pump()
+        value = int(32 * joystick.get_axis(0))
+        value = 10
 
-    proxy.broadcast.latch_values()
-    t = time.time()
+        proxy.broadcast.latch_values()
+        t = time.time()
 
-    ticks = proxy.drive.update(value)['distance']
-    print(60 * ticks / (8*(t - prev_t)), " rpm")
-    prev_t = t
+        ticks = proxy.drive.update(value)['distance']
+        print("{:.2f} rpm ({} ticks)".format(60 * ticks / (8*(t - prev_t)), ticks))
+        prev_t = t
 
-    time.sleep(0.1)
+        time.sleep(0.1)
+finally:
+    proxy.drive.update(0)
