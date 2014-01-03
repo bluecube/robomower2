@@ -36,4 +36,3 @@ try:
         time.sleep(0.1)
 finally:
     print()
-    proxy.drive.update(0)

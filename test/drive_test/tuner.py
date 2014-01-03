@@ -88,4 +88,3 @@ try:
 finally:
     print()
     print(max_ticks)
-    proxy.drive.update(0)

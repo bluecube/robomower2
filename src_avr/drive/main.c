@@ -6,6 +6,7 @@
 #include "build/drive.interface.h"
 
 #define DIRECTION_CHANGE_ZERO_CYCLE_COUNT 4
+#define SAFETY_TIMEOUT (1000 / SERVO_PERIOD)
 
 union byteaccess
 {
@@ -29,6 +30,7 @@ uint8_t needStopCycles;
 uint8_t lastTicks;
 int16_t kP, kI, kD;
 int16_t integratorState;
+uint8_t safetyCounter;
 
 int16_t clamp(int16_t val, int16_t min, int16_t max)
 {
@@ -143,6 +145,7 @@ void handle_update_request(const struct update_request* in,
             needStopCycles = DIRECTION_CHANGE_ZERO_CYCLE_COUNT;
         requestedSpeed = newRequestedSpeed;
         requestedSpeedDirection = newDirection;
+        safetyCounter = SAFETY_TIMEOUT;
     }
 
     out->distance = odometryTicks;
@@ -173,6 +176,13 @@ ISR(TIMER0_OVF_vect)
 
 ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 {
+    if (safetyCounter == 0)
+    {
+        servo_set(0);
+        return;
+    }
+    --safetyCounter;
+
     int8_t ticks = latch_encoder_ticks8(&pidTicksState);
 
     int8_t needStopCyclesCopy = needStopCycles;
