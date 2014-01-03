@@ -25,7 +25,6 @@ volatile int8_t requestedSpeedDirection;
 volatile int8_t currentSpeedDirection;
 volatile uint8_t needStopCycles;
 
-volatile int8_t servoOutput;
 volatile int16_t kP, kI;
 volatile int16_t integratorLimit;
 volatile int16_t integratorState;
