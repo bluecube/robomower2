@@ -50,7 +50,11 @@ class Type:
         return struct.pack(self._struct_arg, int(value * self.multiplier))
 
     def unpack(self, data):
-        return struct.unpack(self._struct_arg, data)[0] / self.multiplier
+        value = struct.unpack(self._struct_arg, data)[0]
+        if self.multiplier != 1:
+            return value / self.multiplier
+        else:
+            return value
 
 class Structure:
     def __init__(self, content):
