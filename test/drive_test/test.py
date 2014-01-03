@@ -17,9 +17,8 @@ joystick = pygame.joystick.Joystick(0)
 
 joystick.init()
 
-#Ziegler nichols: kU = 60, tU = 0.22s
-#proxy.drive.params(kP = 36, kI = 11, kD = 82, integratorLimit = 100)
-proxy.drive.params(kP = 36, kI = 1, kD = 82, integratorLimit = 100)
+# Manually selected values;
+proxy.drive.params(kP = 20, kI = 1, kD = 80, integratorLimit = 1000)
 
 try:
     prev_t = 0
