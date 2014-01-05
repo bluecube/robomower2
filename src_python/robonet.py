@@ -43,11 +43,7 @@ class RoboNetPacket:
 
 
 class RoboNet:
-    """Master for the RoboNet protocol.
-    Works around limitations of posix serial port (and of pysserial)
-    by doing some black magic with termios, this makes the code incompatible with
-    windows pyserial and slightly limits error checking.
-    But the CRC should be strong enough by itself. """
+    """Master for the RoboNet protocol."""
 
     sync_byte = 0x55
     master_address = 0x0
