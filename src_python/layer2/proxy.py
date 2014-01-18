@@ -1,6 +1,11 @@
 from .interface import Interface
+import logging
 
 class MultiInterfaceProxy:
+    """ A proxy over a fixed list of devices on a single robonet bus.
+    Device names, addresses and interface file name must be specified. """
+    logger = logging.getLogger(__name__)
+
     def __init__(self, interfaces, robonet, checkStatus = True):
         self._robonet = robonet
 
@@ -13,6 +18,8 @@ class MultiInterfaceProxy:
 
         if checkStatus:
             self.check_status()
+
+        self.logger.debug("Robonet proxy ready")
 
     def __getattr__(self, name):
         if name not in self._interfaces:
