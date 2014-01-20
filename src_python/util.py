@@ -8,14 +8,17 @@ class TimeElapsed:
         self.prev = time.time()
 
     def tick(self, frame_time):
-        elapsed = self()
-        elapsed2 = elapsed + 0.01
-        if frame_time > elapsed2:
-            time.sleep(frame_time - elapsed2)
-        elif frame_time > elapsed:
-            pass
+        elapsed = self.prev - time.time() + 0.0
+        # The constant accounts for the time spent not sleeping between the two time.time()
+        # calls in this function
+
+        if frame_time > elapsed:
+            time.sleep(frame_time - elapsed)
         else:
             self.logger.warning("Frame time too long (%d ms)", int(1000 * elapsed))
+
+        self.prev = time.time()
+        return elapsed / frame_time
 
     def __call__(self):
         t = time.time()
