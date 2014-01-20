@@ -39,7 +39,7 @@ try:
         #ticksLeft = proxy.left.update(value)['distance']
         #ticksRight = proxy.right.update(value)['distance']
 
-        gui.update()
+        gui.update(delta_t)
         if gui.finished:
             break
 
