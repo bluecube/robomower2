@@ -13,7 +13,7 @@ class Gui:
     def _set_mode(self, size = (0, 0)):
         self.screen = pygame.display.set_mode(size, pygame.RESIZABLE)
 
-    def __init__(self):
+    def __init__(self, robot_config):
         self._set_mode()
 
         self.forward = 0
