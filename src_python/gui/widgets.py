@@ -168,7 +168,7 @@ class Xy:
                             y + h - spacing - text.get_height()))
 
         x_pos = int(x + w * (1 + self.x / self.range_x) / 2)
-        y_pos = int(y + h * (1 + self.y / self.range_y) / 2)
+        y_pos = int(y + h * (1 - self.y / self.range_y) / 2)
         pygame.draw.line(surface, config.color2,
                          (x_pos, y), (x_pos, y + h))
         pygame.draw.line(surface, config.color2,

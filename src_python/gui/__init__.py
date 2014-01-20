@@ -31,9 +31,9 @@ class KeyboardJoy:
 
         if pressed[self.up]:
             if not pressed[self.down]:
-                self.y = max(-1, self.y - self._y_accel * delta_t)
+                self.y = min(1, self.y + self._y_accel * delta_t)
         elif pressed[self.down]:
-            self.y = min(1, self.y + self._y_accel * delta_t)
+            self.y = max(-1, self.y - self._y_accel * delta_t)
         elif self.y > 0:
             self.y = max(0, self.y - self._y_accel * delta_t)
         elif self.y < 0:
