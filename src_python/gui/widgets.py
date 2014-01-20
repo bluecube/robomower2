@@ -116,37 +116,64 @@ class Dial:
                          (center_x + int(math.cos(angle) * arrow_radius), center_y - int(math.sin(angle) * arrow_radius)),
                          2)
 
+
 class Xy:
-    def __init__(self, label, fmt = "%.2f"):
+    def __init__(self, label, range_x = 1, range_y = 1, fmt_x = "%.2f", fmt_y = "%.2f"):
         self.label = label
         self.x = 0
         self.y = 0
-        self.fmt = fmt
+        self.range_x = range_x
+        self.range_y = range_y
+        self.fmt_x = fmt_x
+        self.fmt_y = fmt_y
+
+    @property
+    def label(self):
+        if len(self._label) == 1:
+            return self._label[0]
+        else:
+            return self._label
+
+    @label.setter
+    def label(self, value):
+        if not value:
+            self._label = []
+        elif isinstance(value, str):
+            self._label = [value]
+        else:
+            self._label = value
 
     def draw(self, surface, x, y, w, h):
         spacing = int(config.font.get_height() * 0.3)
 
-        if self.label:
-            text = config.font.render(self.label,
-                                        antialias=True,
-                                        color=config.color1,
-                                        background=config.bgcolor)
-            surface.blit(text, (x + spacing, y + spacing))
+        for i, row in enumerate(self._label):
+            text = config.font.render(row,
+                                      antialias=True,
+                                      color=config.color1,
+                                      background=config.bgcolor)
+            surface.blit(text, (x + spacing, y + spacing + i * config.font.get_linesize()))
 
-        if self.fmt:
-            text = config.font.render(' '.join(["X:", self.fmt % self.x, "Y:", self.fmt % self.y]),
-                                        antialias=True,
-                                        color=config.color1,
-                                        background=config.bgcolor)
-            surface.blit(text, (x + w - spacing - text.get_width(),
-                                y + h - spacing - text.get_height()))
+        text = config.font.render((self.fmt_x or "") % self.x,
+                                  antialias=True,
+                                  color=config.color1,
+                                  background=config.bgcolor)
+        surface.blit(text, (x + spacing,
+                            y + h - spacing - text.get_height() - config.font.get_linesize()))
 
-        x_pos = int(x + w * (1 + self.x) / 2)
-        y_pos = int(y + h * (1 + self.y) / 2)
+        text = config.font.render((self.fmt_y or "") % self.y,
+                                  antialias=True,
+                                  color=config.color1,
+                                  background=config.bgcolor)
+        surface.blit(text, (x + spacing,
+                            y + h - spacing - text.get_height()))
+
+        x_pos = int(x + w * (1 + self.x / self.range_x) / 2)
+        y_pos = int(y + h * (1 + self.y / self.range_y) / 2)
         pygame.draw.line(surface, config.color2,
                          (x_pos, y), (x_pos, y + h))
         pygame.draw.line(surface, config.color2,
                          (x, y_pos), (x + w, y_pos))
+
 
 class Grid:
     def __init__(self, columns, items, padding):

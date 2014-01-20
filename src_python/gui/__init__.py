@@ -23,7 +23,10 @@ class Gui:
         self.speed = widgets.Dial("fwd velocity", 0, 1.5, "%.1f", "%.2f", "m/s")
         self.battery = widgets.Dial("bat", 0, 100, "%d", "%d", "%")
         self.battery.value = 100
-        self.drive = widgets.Xy("drive input")
+        self.drive = widgets.Xy(["drive input", "keyboard"],
+                                robot_config["dimensions"]["max_velocity"],
+                                robot_config["dimensions"]["max_angular_velocity"],
+                                "%.2f m/s", "%.2f rad/s")
 
         self.grid = widgets.Grid(2, [self.speed, self.drive,
                                   self.battery],
