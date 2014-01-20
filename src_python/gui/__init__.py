@@ -50,14 +50,15 @@ class Gui:
     def __init__(self, robot_config):
         self._set_mode()
 
-        self.robot_config = robot_config
+        dim = robot_config["dimensions"]
+        self.robot_dimensions = dim
 
         self.forward = 0
         self.turn = 0
         self.finished = False
 
-        self.keyboard = KeyboardJoy(robot_config["dimensions"]["max_angular_acceleration"],
-                                    robot_config["dimensions"]["max_acceleration"])
+        self.keyboard = KeyboardJoy(dim["max_angular_acceleration"] / dim["max_angular_velocity"],
+                                    dim["max_acceleration"] / dim["max_velocity"])
 
         self.speed = widgets.Dial("fwd velocity", 0, 1.5, "%.1f", "%.2f", "m/s")
         self.battery = widgets.Dial("bat", 0, 100, "%d", "%d", "%")
@@ -93,8 +94,8 @@ class Gui:
 
         self.keyboard.update(delta_t)
 
-        self.turn = self.keyboard.x * self.robot_config["dimensions"]["max_angular_velocity"]
-        self.forward = self.keyboard.y * self.robot_config["dimensions"]["max_velocity"]
+        self.turn = self.keyboard.x * self.robot_dimensions["max_angular_velocity"]
+        self.forward = self.keyboard.y * self.robot_dimensions["max_velocity"]
 
         self.drive.x = self.turn
         self.drive.y = self.forward
