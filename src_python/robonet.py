@@ -48,7 +48,6 @@ class RoboNet:
     sync_byte = 0x55
     master_address = 0x0
     broadcast_address = 0xf
-    max_data_size = 15
 
     timeout = 0.1
 
@@ -91,9 +90,6 @@ class RoboNet:
             if address != RoboNet.master_address:
                 self._port.flushInput()
                 raise RoboNetException("Reply address is not 0x00 (received header: {})".format(header_str))
-            if length > RoboNet.max_data_size:
-                self._port.flushInput()
-                raise RoboNetException("Data size too large (received header: {})".format(header_str))
 
             self._port.timeout = end_time - time.time()
 
