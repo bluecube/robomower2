@@ -1,12 +1,19 @@
 {
-    "dimensions": {
+    "drive": {
         "wheel_base": 0.6,
+        "resolution": 731.635938e-6,
+        "PID": {
+            "kP": 20,
+            "kI": 1,
+            "kD": 80
+        }
+    },
 
+    "limits": {
         "max_velocity": 1.1,
         "max_acceleration": 0.5,
         "max_angular_velocity": 1,
-        "max_angular_acceleration": 0.5,
-        "drive_resolution": 0.731635938e-3
+        "max_angular_acceleration": 0.5
     },
 
     "logging" : {

@@ -15,6 +15,7 @@ class KeyboardJoy:
         self.y = 0
         self._x_accel = x_accel
         self._y_accel = y_accel
+        self.name = "keyboard"
 
     def update(self, delta_t):
         pressed = pygame.key.get_pressed()
@@ -43,6 +44,8 @@ class Gui:
     logger = logging.getLogger(__name__)
 
     grid_cell_size = 150
+    grid_columns = 2
+    grid_width = grid_columns * grid_cell_size
 
     def _set_mode(self, size = (0, 0)):
         self.screen = pygame.display.set_mode(size, pygame.RESIZABLE)
@@ -50,27 +53,29 @@ class Gui:
     def __init__(self, robot_config):
         self._set_mode()
 
-        dim = robot_config["dimensions"]
-        self.robot_dimensions = dim
+        lim = robot_config["limits"]
+        self._limits = lim
 
         self.forward = 0
         self.turn = 0
         self.finished = False
 
-        self.keyboard = KeyboardJoy(dim["max_angular_acceleration"] / dim["max_angular_velocity"],
-                                    dim["max_acceleration"] / dim["max_velocity"])
+        self.velocity = 0
 
-        self.speed = widgets.Dial("fwd velocity", 0, 1.5, "%.1f", "%.2f", "m/s")
-        self.battery = widgets.Dial("bat", 0, 100, "%d", "%d", "%")
-        self.battery.value = 100
-        self.drive = widgets.Xy(["drive input", "keyboard"],
-                                robot_config["dimensions"]["max_angular_velocity"],
-                                robot_config["dimensions"]["max_velocity"],
-                                "%.2f rad/s", "%.2f m/s")
+        self._joystick = KeyboardJoy(lim["max_angular_acceleration"] / lim["max_angular_velocity"],
+                                    lim["max_acceleration"] / lim["max_velocity"])
 
-        self.grid = widgets.Grid(2, [self.speed, self.drive,
-                                  self.battery],
-                                 5)
+        self._velocity = widgets.Dial("fwd velocity", 0, 1.5, "%.1f", "%.2f", "m/s")
+        self._battery = widgets.Dial("bat", 0, 100, "%d", "%d", "%")
+        self._battery.value = 100
+        self._drive = widgets.Xy(["drive input", ""],
+                                 -lim["max_angular_velocity"],
+                                 lim["max_velocity"],
+                                 "%.2f rad/s", "%.2f m/s")
+
+        self._grid = widgets.Grid(self.grid_columns,
+                                  [self._velocity, self._drive, self._battery],
+                                  5)
 
         self.logger.info("GUI ready")
 
@@ -80,9 +85,8 @@ class Gui:
         self.screen.fill(config.bgcolor)
 
 
-        grid_width = self.grid.columns * self.grid_cell_size
-        self.grid.draw(self.screen, w - grid_width, 0,
-                       grid_width, self.grid.rows * self.grid_cell_size)
+        self._grid.draw(self.screen, w - self.grid_width, 0,
+                        self.grid_width, self._grid.rows * self.grid_cell_size)
 
     def update(self, delta_t):
         for event in pygame.event.get():
@@ -92,13 +96,16 @@ class Gui:
             elif event.type == pygame.VIDEORESIZE:
                 self._set_mode(event.size)
 
-        self.keyboard.update(delta_t)
+        self._joystick.update(delta_t)
 
-        self.turn = self.keyboard.x * self.robot_dimensions["max_angular_velocity"]
-        self.forward = self.keyboard.y * self.robot_dimensions["max_velocity"]
+        self.turn = -self._joystick.x * self._limits["max_angular_velocity"]
+        self.forward = self._joystick.y * self._limits["max_velocity"]
 
-        self.drive.x = self.turn
-        self.drive.y = self.forward
+        self._drive.x = self.turn
+        self._drive.y = self.forward
+        self._drive.label[1] = self._joystick.name
+
+        self._velocity.value = self.velocity
 
         self.draw()
         pygame.display.flip()
