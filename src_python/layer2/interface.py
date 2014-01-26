@@ -142,6 +142,7 @@ class Interface:
         self.filename = filename
         self.request_response = collections.OrderedDict();
         self.broadcast = collections.OrderedDict();
+        self.constants = {}
 
         self.includes = []
 
@@ -181,6 +182,19 @@ class Interface:
                 robonet_header = os.path.join(os.path.dirname(filename), robonet_header)
             self.robonet_header = robonet_header
 
+        if parser.has_section("constants"):
+            for name, value in parser["constants"].items():
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
+                else:
+                    if int(value) == value:
+                        value = int(value)
+                if name in self.constants and value != self.constants[name]:
+                    raise ValueError("Constant %s already in the list with different value" % name)
+                self.constants[name] = value
+
         for section, content in parser.items():
             if section.startswith('request:'):
                 request_response = self.request_response.setdefault(section[len('request:'):], RequestResponse(len(self.request_response)))
@@ -210,6 +224,11 @@ class Interface:
 
     def _calc_checksum(self):
         checksum = 0
+
+        for name, value in self.constants.items():
+            checksum = self._string_checksum(name, checksum)
+            checksum = self._string_checksum(repr(value), checksum)
+
         for rr_name, rr in self.request_response.items():
             checksum = self._string_checksum(rr_name, checksum)
             checksum = rr._calc_checksum(checksum)

@@ -3,11 +3,15 @@
 #include <util/atomic.h>
 #include <stdint.h>
 #include "turnigy.h"
-#include "servo/servo.h"
+
+// drive interface must be included before servo
 #include "build/drive.interface.h"
+#define SERVO_PERIOD (1000.0 / PID_FREQUENCY)
+
+#include "servo/servo.h"
 
 #define DIRECTION_CHANGE_ZERO_CYCLE_COUNT 4
-#define SAFETY_TIMEOUT (1000 / SERVO_PERIOD)
+#define SAFETY_TIMEOUT ((uint8_t)(1000 / SERVO_PERIOD))
 
 union byteaccess
 {

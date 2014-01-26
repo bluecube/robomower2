@@ -45,6 +45,8 @@ class Proxy:
             return _BroadcastHelper(self._robonet, broadcast)
         elif name in self._interface.request_response:
             return _RequestHelper(self._interface.request_response[name], self._address, self._robonet)
+        elif name in self._interface.constants:
+            return self._interface.constants[name]
         else:
             raise AttributeError("{} is not a member of an interface".format(name))
 

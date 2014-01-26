@@ -3,6 +3,9 @@ name = drive
 robonet_header = robonet/robonet.h
 include = broadcast.interface
 
+[constants]
+PID_FREQUENCY = 50
+
 [request:update]
 speed = int8
 

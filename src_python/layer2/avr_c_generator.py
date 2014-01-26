@@ -3,6 +3,17 @@ import re
 import argparse
 import codegen_helper
 import interface
+import string
+
+def _string(s):
+    ret = ['"']
+    for char in s:
+        if char not in string.printable or char in '"\\':
+            ret.append("\\u{:04x}".format(ord(char)))
+        else:
+            ret.append(char)
+    ret.append('"')
+    return ''.join(ret)
 
 def _struct(struct, name, f):
     if struct.empty():
@@ -73,6 +84,14 @@ def _generate_header(interface, header_filename, f):
     f('#define LAYER2_UNKNOWN_MESSAGE_TYPE   (ROBONET_LAST_STATUS + 2)')
     f()
     f('extern uint8_t layer2Status;')
+    f()
+    f('/* Interface constants */')
+    for name, value in interface.constants.items():
+        if isinstance(value, str):
+            value = _string(value)
+        else:
+            value = repr(value)
+        f('#define {} {}', name, value)
     f()
 
     for i, (name, rr) in enumerate(interface.request_response.items()):
