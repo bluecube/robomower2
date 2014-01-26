@@ -161,7 +161,8 @@ class Interface:
         parser.comment_prefixes = ('#',)
         parser.inline_comment_prefixes = ('#',)
         parser.optionxform = str
-        parser.read(filename)
+        with open(filename, "r") as f:
+            parser.read_file(f, filename)
 
         if parser.has_option("interface", "include"):
             included_path = parser["interface"]["include"]
