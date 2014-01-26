@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 
-#include "preprocessor.h"
-
 #ifndef SERVO_PERIOD
-// Period of the servo signal in milliseconds.
+/** Period of the servo signal in milliseconds.*/
 #define SERVO_PERIOD 20
 #endif
+
+#include "preprocessor.h"
 
 void servo_init();
 void servo_enable();
