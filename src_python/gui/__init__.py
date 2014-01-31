@@ -16,9 +16,19 @@ class KeyboardJoy:
         self.y = 0
         self._x_accel = x_accel
         self._y_accel = y_accel
-        self.name = "keyboard"
+
+        if pygame.joystick.get_count() > 0:
+            self._use_joystick()
+        else:
+            self._use_keyboard()
+
 
     def update(self, delta_t):
+        if self._joystick is not None:
+            self.x = self._joystick.get_axis(0)
+            self.y = -self._joystick.get_axis(1)
+            return
+
         pressed = pygame.key.get_pressed()
 
         if pressed[self.left]:
@@ -40,6 +50,15 @@ class KeyboardJoy:
             self.y = max(0, self.y - self._y_accel * delta_t)
         elif self.y < 0:
             self.y = min(0, self.y + self._y_accel * delta_t)
+
+    def _use_keyboard(self):
+        self._joystick = None
+        self.name = "keyboard"
+
+    def _use_joystick(self):
+        self._joystick = pygame.joystick.Joystick(0)
+        self._joystick.init()
+        self.name = self._joystick.get_name()
 
 class Gui:
     logger = logging.getLogger(__name__)
