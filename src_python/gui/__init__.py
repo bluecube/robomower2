@@ -2,6 +2,7 @@ import pygame
 import logging
 from . import config
 from . import widgets
+from . import mapwidget
 
 pygame.init()
 
@@ -72,10 +73,11 @@ class Gui:
                                  -lim["max_angular_velocity"],
                                  lim["max_velocity"],
                                  "%.2f rad/s", "%.2f m/s")
-
         self._grid = widgets.Grid(self.grid_columns,
                                   [self._velocity, self._drive, self._battery],
                                   5)
+        self._map = mapwidget.MapWidget()
+        self._map.samples = [(0,0), (5, 10), (16, 7), (10, 10)]
 
         self.logger.info("GUI ready")
 
@@ -87,6 +89,7 @@ class Gui:
 
         self._grid.draw(self.screen, w - self.grid_width, 0,
                         self.grid_width, self._grid.rows * self.grid_cell_size)
+        self._map.draw(self.screen, 0, 0, w - self.grid_width, h)
 
     def update(self, delta_t):
         for event in pygame.event.get():
@@ -95,6 +98,11 @@ class Gui:
                 return
             elif event.type == pygame.VIDEORESIZE:
                 self._set_mode(event.size)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4:
+                    self._map.zoom(1)
+                elif event.button == 5:
+                    self._map.zoom(-1)
 
         self._joystick.update(delta_t)
 
