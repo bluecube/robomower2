@@ -46,6 +46,9 @@ class Type:
     def __len__(self):
         return self.size // 8
 
+    def __eq__(self, other):
+        return self.unsigned == other.unsigned and self.size == other.size and self.multiplier == other.multiplier
+
     def pack(self, value):
         return struct.pack(self._struct_arg, int(value * self.multiplier))
 
@@ -75,6 +78,9 @@ class Structure:
 
     def __len__(self):
         return sum(len(t) for t in self.members.values())
+
+    def __eq__(self, other):
+        return all(a == b for a, b in zip(self.members.values(), other.members.values()))
 
     def pack(self, *args, **kwargs):
         if len(args) > len(self.members):
@@ -126,6 +132,9 @@ class Broadcast:
 
     def _calc_checksum(self, init = 0):
         return self.broadcast._calc_checksum(init)
+
+    def __eq__(self, other):
+        return self.id == other.id and self.broadcast == other.broadcast and self.automatic == other.automatic
 
 
 class Interface:

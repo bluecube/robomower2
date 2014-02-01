@@ -70,7 +70,7 @@ class _MultiBroadcastProxy:
         for addr, interface in interfaces.values():
             for broadcast_name, broadcast in interface.broadcast.items():
                 if broadcast.id in broadcast_ids:
-                    duplicate_name, duplicate_broadcast = broadcast_ids[i]
+                    duplicate_name, duplicate_broadcast = broadcast_ids[broadcast.id]
                     if duplicate_name != broadcast_name or duplicate_broadcast != broadcast:
                         raise Exception("Duplicate broadcast ({} vs {})".format(broadcast_name, duplicate_name))
                     else:
