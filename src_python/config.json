@@ -1,4 +1,9 @@
 {
+    "robonet": {
+        "port": "/dev/ttyUSB1",
+        "baudrate": 38400
+    },
+
     "drive": {
         "wheel_base": 0.6,
         "resolution": 731.635938e-6,
@@ -11,9 +16,9 @@
 
     "limits": {
         "max_velocity": 1.1,
-        "max_acceleration": 0.5,
+        "max_acceleration": 0.25,
         "max_angular_velocity": 1,
-        "max_angular_acceleration": 0.5
+        "max_angular_acceleration": 0.25
     },
 
     "logging" : {
@@ -33,7 +38,7 @@
             }
         },
         "root": {
-            "level": "DEBUG",
+            "level": "INFO",
             "handlers": [ "stderr" ]
         },
         "disable_existing_loggers": false

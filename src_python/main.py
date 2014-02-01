@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 try:
     logger.info("Hello!")
 
-    #proxy = layer2.proxy.MultiInterfaceProxy(
-    #    [
-    #        (1, "right", "src_avr/drive/drive.interface"),
-    #        (2, "left", "src_avr/drive/drive.interface"),
-    #    ],
-    #    robonet.RoboNet('/dev/ttyUSB1', 38400))
-    proxy = fake_hw.FakeHw()
+    proxy = layer2.proxy.MultiInterfaceProxy(
+        [
+            (1, "right", "../src_avr/drive/drive.interface"),
+            (2, "left", "../src_avr/drive/drive.interface"),
+        ],
+        robonet.RoboNet(config["robonet"]["port"], config["robonet"]["baudrate"]))
+    #proxy = fake_hw.FakeHw()
     proxy.right.params(kP = 20, kI = 1, kD = 80)
     proxy.left.params(kP = 20, kI = 1, kD = 80)
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
