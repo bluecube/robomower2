@@ -85,16 +85,16 @@ class Gui:
 
         self.velocity = 0
 
-        self._joystick = KeyboardJoy(lim["max_angular_acceleration"] / lim["max_angular_velocity"],
-                                    lim["max_acceleration"] / lim["max_velocity"],
+        self._joystick = KeyboardJoy(lim["angular_acceleration"] / lim["angular_velocity"],
+                                    lim["acceleration"] / lim["velocity"],
                                     robot_config["gui"]["joystick_nonlinearity"])
 
         self._velocity = widgets.Dial("fwd velocity", 0, 1.5, "%.1f", "%.2f", "m/s")
         self._battery = widgets.Dial("bat", 0, 100, "%d", "%d", "%")
         self._battery.value = 100
         self._drive = widgets.Xy(["drive input", ""],
-                                 -lim["max_angular_velocity"],
-                                 lim["max_velocity"],
+                                 -lim["angular_velocity"],
+                                 lim["velocity"],
                                  "%.2f rad/s", "%.2f m/s")
         self._grid = widgets.Grid(self.grid_columns,
                                   [self._velocity, self._drive, self._battery],
@@ -129,8 +129,8 @@ class Gui:
 
         self._joystick.update(delta_t)
 
-        self.turn = -self._joystick.x * self._limits["max_angular_velocity"]
-        self.forward = self._joystick.y * self._limits["max_velocity"]
+        self.turn = -self._joystick.x * self._limits["angular_velocity"]
+        self.forward = self._joystick.y * self._limits["velocity"]
 
         self._drive.x = self.turn
         self._drive.y = self.forward

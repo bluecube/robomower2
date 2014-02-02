@@ -19,10 +19,10 @@
     },
 
     "limits": {
-        "max_velocity": 1.1,
-        "max_acceleration": 0.25,
-        "max_angular_velocity": 1,
-        "max_angular_acceleration": 0.25
+        "velocity": 1.1,
+        "acceleration": 0.25,
+        "angular_velocity": 1,
+        "angular_acceleration": 0.25
     },
 
     "logging" : {
