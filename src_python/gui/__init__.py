@@ -11,10 +11,10 @@ class KeyboardJoy:
     left = pygame.K_a
     down = pygame.K_s
     right = pygame.K_d
-    def __init__(self, x_accel, y_accel):
+    def __init__(self, x_accel, y_accel, nonlinearity):
         self._x = 0
         self._y = 0
-        self.a = 0.7
+        self.a = nonlinearity
         self._x_accel = x_accel
         self._y_accel = y_accel
 
@@ -86,7 +86,8 @@ class Gui:
         self.velocity = 0
 
         self._joystick = KeyboardJoy(lim["max_angular_acceleration"] / lim["max_angular_velocity"],
-                                    lim["max_acceleration"] / lim["max_velocity"])
+                                    lim["max_acceleration"] / lim["max_velocity"],
+                                    robot_config["gui"]["joystick_nonlinearity"])
 
         self._velocity = widgets.Dial("fwd velocity", 0, 1.5, "%.1f", "%.2f", "m/s")
         self._battery = widgets.Dial("bat", 0, 100, "%d", "%d", "%")
