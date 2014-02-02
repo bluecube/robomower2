@@ -12,8 +12,9 @@ class KeyboardJoy:
     down = pygame.K_s
     right = pygame.K_d
     def __init__(self, x_accel, y_accel):
-        self.x = 0
-        self.y = 0
+        self._x = 0
+        self._y = 0
+        self.a = 0.7
         self._x_accel = x_accel
         self._y_accel = y_accel
 
@@ -25,31 +26,33 @@ class KeyboardJoy:
 
     def update(self, delta_t):
         if self._joystick is not None:
-            self.x = self._joystick.get_axis(0)
-            self.y = -self._joystick.get_axis(1)
-            return
+            self._x = self._joystick.get_axis(0)
+            self._y = -self._joystick.get_axis(1)
+        else:
+            pressed = pygame.key.get_pressed()
 
-        pressed = pygame.key.get_pressed()
+            if pressed[self.left]:
+                if not pressed[self.right]:
+                    self._x = max(-1, self._x - self._x_accel * delta_t)
+            elif pressed[self.right]:
+                self._x = min(1, self._x + self._x_accel * delta_t)
+            elif self._x > 0:
+                self._x = max(0, self._x - self._x_accel * delta_t)
+            elif self._x < 0:
+                self._x = min(0, self._x + self._x_accel * delta_t)
 
-        if pressed[self.left]:
-            if not pressed[self.right]:
-                self.x = max(-1, self.x - self._x_accel * delta_t)
-        elif pressed[self.right]:
-            self.x = min(1, self.x + self._x_accel * delta_t)
-        elif self.x > 0:
-            self.x = max(0, self.x - self._x_accel * delta_t)
-        elif self.x < 0:
-            self.x = min(0, self.x + self._x_accel * delta_t)
+            if pressed[self.up]:
+                if not pressed[self.down]:
+                    self._y = min(1, self._y + self._y_accel * delta_t)
+            elif pressed[self.down]:
+                self._y = max(-1, self._y - self._y_accel * delta_t)
+            elif self._y > 0:
+                self._y = max(0, self._y - self._y_accel * delta_t)
+            elif self._y < 0:
+                self._y = min(0, self._y + self._y_accel * delta_t)
 
-        if pressed[self.up]:
-            if not pressed[self.down]:
-                self.y = min(1, self.y + self._y_accel * delta_t)
-        elif pressed[self.down]:
-            self.y = max(-1, self.y - self._y_accel * delta_t)
-        elif self.y > 0:
-            self.y = max(0, self.y - self._y_accel * delta_t)
-        elif self.y < 0:
-            self.y = min(0, self.y + self._y_accel * delta_t)
+        self.x = self.a * self._x * self._x * self._x + (1 - self.a) * self._x
+        self.y = self.a * self._y * self._y * self._y + (1 - self.a) * self._y
 
     def _use_keyboard(self):
         self._joystick = None
