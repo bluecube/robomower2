@@ -13,6 +13,12 @@ import differential_drive
 
 import gui
 
+class Sample:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.heading = 0
+
 with open("config.json", "r") as fp:
     config = json.load(fp)
 
@@ -34,6 +40,8 @@ try:
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
     gui = gui.Gui(config)
 
+    position = Sample()
+
     integration_timer = util.TimeElapsed()
     sleep_timer = util.TimeElapsed()
     while True:
@@ -42,7 +50,11 @@ try:
 
         gui.update(delta_t)
         drive.update(gui.forward, gui.turn)
+
+        drive.modify_sample(position)
+
         gui.velocity = drive.forward_distance / delta_t
+        gui.samples = [position]
 
         if gui.finished:
             break

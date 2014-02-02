@@ -1,3 +1,5 @@
+import math
+
 class DifferentialDrive:
     """ Left is positive """
     def __init__(self, left_proxy, right_proxy, config):
@@ -33,6 +35,13 @@ class DifferentialDrive:
 
         self.left_distance = left_distance * self.resolution
         self.right_distance = right_distance * self.resolution
+
+    def modify_sample(self, sample):
+        sample.heading += self.turn_angle
+
+        distance = self.forward_distance
+        sample.x += math.cos(sample.heading) * distance
+        sample.y += math.sin(sample.heading) * distance
 
     @property
     def forward_distance(self):

@@ -45,14 +45,20 @@ class MapWidget:
 
         # Samples
         for sample in self.samples:
-            x = int((sample[0] + self.offset[0]) * scale)
-            y = int((sample[1] + self.offset[1]) * scale)
+            x = int((sample.x + self.offset[0]) * scale)
+            y = int((sample.y + self.offset[1]) * scale)
 
             if abs(x) > w/2 or abs(y) > h/2:
                 continue
 
             pygame.draw.circle(surface, config.color1,
                                (x + x_center, y + y_center), radius)
+
+        cross = min(w, h) / 30
+        pygame.draw.line(surface, config.color2,
+                         (x_center - cross, y_center), (x_center + cross, y_center))
+        pygame.draw.line(surface, config.color2,
+                         (x_center, y_center - cross), (x_center, y_center + cross))
 
     def zoom(self, step):
         self._zoom += step

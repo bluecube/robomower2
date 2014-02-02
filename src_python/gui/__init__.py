@@ -83,8 +83,6 @@ class Gui:
         self.turn = 0
         self.finished = False
 
-        self.velocity = 0
-
         self._joystick = KeyboardJoy(lim["angular_acceleration"] / lim["angular_velocity"],
                                     lim["acceleration"] / lim["velocity"],
                                     robot_config["gui"]["joystick_nonlinearity"])
@@ -100,7 +98,6 @@ class Gui:
                                   [self._velocity, self._drive, self._battery],
                                   5)
         self._map = mapwidget.MapWidget()
-        self._map.samples = [(0,0), (5, 10), (16, 7), (10, 10)]
 
         self.logger.info("GUI ready")
 
@@ -129,14 +126,29 @@ class Gui:
 
         self._joystick.update(delta_t)
 
-        self.turn = -self._joystick.x * self._limits["angular_velocity"]
+        self.turn = self._joystick.x * self._limits["angular_velocity"]
         self.forward = self._joystick.y * self._limits["velocity"]
 
-        self._drive.x = self.turn
+        self._drive.x = -self.turn
         self._drive.y = self.forward
         self._drive.label[1] = self._joystick.name
 
-        self._velocity.value = self.velocity
-
         self.draw()
         pygame.display.flip()
+
+
+    @property
+    def velocity(self):
+        return self._velocity.value
+
+    @velocity.setter
+    def velocity(self, value):
+        self._velocity.value = value
+
+    @property
+    def samples(self):
+        return self._map.samples
+
+    @samples.setter
+    def samples(self, value):
+        self._map.samples = value
