@@ -5,8 +5,8 @@
     },
 
     "drive": {
-        "wheel_base": 0.6,
-        "resolution": 731.635938e-6,
+        "wheel_base": 460e-3,
+        "resolution": 729.774e-6,
         "PID": {
             "kP": 20,
             "kI": 1,
