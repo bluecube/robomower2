@@ -62,7 +62,10 @@ class RoboNet:
         return device | (function << 4)
 
     def __init__(self, port, baudrate):
-        self._port = serial.Serial(port, baudrate)
+        try:
+            self._port = serial.Serial(port, baudrate)
+        except serial.serialutil.SerialException as e:
+            raise RoboNetException(str(e))
 
     def send_packet(self, packet):
         """Send a single packet, don't wait for reply."""
