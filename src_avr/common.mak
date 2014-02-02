@@ -46,6 +46,7 @@ CFILES_WHOPR=$(CFILES) $(addprefix $(BUILD_DIR)/,$(addsuffix .c,$(IFFILES)))
 CFLAGS+=-fwhole-program
 WHOPR=$(BUILD_DIR)/whopr.c
 OFILES:=$(WHOPR:.c=.c.o) $(addprefix $(BUILD_DIR)/,$(addsuffix .o,$(SFILES)))
+DEPFILES+=$(WHOPR:.c=.c.d)
 .DEFAULT_GOAL:=all
 $(WHOPR): $(CFILES_WHOPR)
 	$(DO_MAKE_DIR)
