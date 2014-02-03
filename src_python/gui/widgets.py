@@ -114,7 +114,7 @@ class Dial:
                          config.color2,
                          (center_x, center_y),
                          (center_x + int(math.cos(angle) * arrow_radius), center_y - int(math.sin(angle) * arrow_radius)),
-                         2)
+                         3)
 
 
 class Xy:
