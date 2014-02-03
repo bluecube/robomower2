@@ -1,0 +1,34 @@
+[
+    {
+        "type": "line",
+        "length": 1
+    },
+    {
+        "type": "turn",
+        "angle": 90
+    },
+    {
+        "type": "line",
+        "length": 1
+    },
+    {
+        "type": "turn",
+        "angle": 90
+    },
+    {
+        "type": "line",
+        "length": 1
+    },
+    {
+        "type": "turn",
+        "angle": 90
+    },
+    {
+        "type": "line",
+        "length": 1
+    },
+    {
+        "type": "turn",
+        "angle": 90
+    }
+]

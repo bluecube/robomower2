@@ -10,6 +10,7 @@ import layer2
 import fake_hw
 
 import differential_drive
+import patterns
 
 import gui
 
@@ -41,6 +42,7 @@ try:
     proxy.left.params(kP = 20, kI = 1, kD = 80)
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
     gui = gui.Gui(config)
+    pattern = patterns.Pattern("patterns/square.json", config)
 
     position = Sample()
 
@@ -51,7 +53,9 @@ try:
         delta_t = integration_timer()
 
         gui.update(delta_t)
-        drive.update(gui.forward, gui.turn)
+
+        pattern.update(delta_t)
+        drive.update(pattern.forward, pattern.turn)
 
         drive.modify_sample(position)
 
