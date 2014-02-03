@@ -97,7 +97,7 @@ class Gui:
         self._grid = widgets.Grid(self.grid_columns,
                                   [self._velocity, self._drive, self._battery],
                                   5)
-        self._map = mapwidget.MapWidget()
+        self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
 
         self.logger.info("GUI ready")
 

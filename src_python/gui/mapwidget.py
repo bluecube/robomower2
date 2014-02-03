@@ -3,8 +3,8 @@ import pygame.draw
 from . import config
 
 class MapWidget:
-    def __init__(self):
-        self._zoom = 0
+    def __init__(self, zoom):
+        self._zoom = zoom
         self.samples = []
         self.offset = (0, 0)
 
@@ -12,7 +12,7 @@ class MapWidget:
         scale = 1.1**self._zoom
         x_center = x + w // 2
         y_center = y + h // 2
-        radius = 5
+        sample_radius = 10
 
         # Scale
         width_available = w / 5
@@ -35,12 +35,12 @@ class MapWidget:
                                   background=config.bgcolor)
         surface.blit(text, (x + w - text.get_width(), y + h - text.get_height()))
         x_offset = x + w - text.get_width() - config.font.get_height() // 2 - scale_ticks * scale_step
-        y_offset = y + h - text.get_height() // 2
+        y_offset = y + h - 3 * text.get_height() // 4
 
         for i in range(scale_ticks):
             pygame.draw.rect(surface, config.color1, pygame.Rect(x_offset + i * scale_step,
-                                                                 y_offset - 3,
-                                                                 scale_step + 1, 6),
+                                                                 y_offset,
+                                                                 scale_step + 1, text.get_height() // 2),
                              i % 2)
 
         # Samples
@@ -51,9 +51,17 @@ class MapWidget:
             if abs(x) > w/2 or abs(y) > h/2:
                 continue
 
-            pygame.draw.circle(surface, config.color1,
-                               (x + x_center, y + y_center), radius)
+            x += x_center
+            y += y_center
 
+            c = int(math.cos(sample.heading) * sample_radius)
+            s = int(math.sin(sample.heading) * sample_radius)
+            pygame.draw.polygon(surface, config.color1,
+                                [(x + c, y + s),
+                                 (x + (s - c) // 2, y + (- c - s) // 2),
+                                 (x + (- s - c) // 2, y + (c - s) // 2)])
+
+        # Cross
         cross = min(w, h) / 30
         pygame.draw.line(surface, config.color2,
                          (x_center - cross, y_center), (x_center + cross, y_center))
