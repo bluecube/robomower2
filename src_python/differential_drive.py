@@ -37,11 +37,21 @@ class DifferentialDrive:
         self.right_distance = right_distance * self.resolution
 
     def modify_sample(self, sample):
-        sample.heading += self.turn_angle
+        forward = self.forward_distance
+        turn = self.turn_angle
 
-        distance = self.forward_distance
-        sample.x += math.cos(sample.heading) * distance
-        sample.y += math.sin(sample.heading) * distance
+        alpha = sample.heading + turn / 2
+
+        # For circular paths, shifts of the sample should be multiplied
+        # by forward * 2 * math.sin(turn / 2) / turn instead of just forward
+        # However for our turn and update rates, we won't be seing turn larger
+        # than 0.1 => error is about 0.04%
+        assert abs(turn) < 0.15
+
+        sample.x += math.cos(alpha) * forward
+        sample.y += math.sin(alpha) * forward
+
+        sample.heading += turn
 
     @property
     def forward_distance(self):
