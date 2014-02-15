@@ -21,9 +21,9 @@
 
     "limits": {
         "velocity": 1.1,
-        "acceleration": 0.25,
+        "acceleration": 0.5,
         "angular_velocity": 1,
-        "angular_acceleration": 0.25
+        "angular_acceleration": 1
     },
 
     "logging" : {
