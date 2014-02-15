@@ -153,14 +153,14 @@ class Xy:
                                       background=config.bgcolor)
             surface.blit(text, (x + spacing, y + spacing + i * config.font.get_linesize()))
 
-        text = config.font.render((self.fmt_x or "") % self.x,
+        text = config.font.render((self.fmt_x or "") % (self.x + 0),
                                   antialias=True,
                                   color=config.color1,
                                   background=config.bgcolor)
         surface.blit(text, (x + spacing,
                             y + h - spacing - text.get_height() - config.font.get_linesize()))
 
-        text = config.font.render((self.fmt_y or "") % self.y,
+        text = config.font.render((self.fmt_y or "") % (self.y + 0),
                                   antialias=True,
                                   color=config.color1,
                                   background=config.bgcolor)

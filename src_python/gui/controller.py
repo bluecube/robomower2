@@ -28,7 +28,7 @@ class GuiController:
 
     def update(self, delta_t):
         if self._joystick is not None:
-            self._x = self._joystick.get_axis(0)
+            self._x = -self._joystick.get_axis(0)
             self._y = -self._joystick.get_axis(1)
         else:
             pressed = pygame.key.get_pressed()
