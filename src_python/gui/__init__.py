@@ -27,15 +27,13 @@ class Gui:
 
         self.controller = controller.GuiController(self);
 
-        self._velocity = widgets.Dial("fwd velocity", 0, 1.5, "%.1f", "%.2f", "m/s")
-        self._battery = widgets.Dial("bat", 0, 100, "%d", "%d", "%")
-        self._battery.value = 100
-        self._drive = widgets.Xy(["drive input", ""],
+        self._velocity = widgets.Dial("velocity", 0, lim["velocity"], "%.1f", "%.2f", "m/s")
+        self._drive = widgets.Xy("",
                                  -lim["angular_velocity"],
                                  lim["velocity"],
                                  "%.2f rad/s", "%.2f m/s")
         self._grid = widgets.Grid(self.grid_columns,
-                                  [self._velocity, self._drive, self._battery],
+                                  [self._velocity, self._drive],
                                   5)
         self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
 
@@ -66,7 +64,7 @@ class Gui:
 
         self._drive.x = self.controller.turn
         self._drive.y = self.controller.forward
-        self._drive.label[1] = self.controller.name
+        self._drive.label = self.controller.name
 
         self.draw()
         pygame.display.flip()
@@ -77,7 +75,7 @@ class Gui:
 
     @velocity.setter
     def velocity(self, value):
-        self._velocity.value = value
+        self._velocity.value = abs(value)
 
     @property
     def samples(self):
