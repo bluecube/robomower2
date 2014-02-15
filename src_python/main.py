@@ -42,7 +42,9 @@ try:
     proxy.left.params(kP = 20, kI = 1, kD = 80)
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
     gui = gui.Gui(config)
-    pattern = patterns.Pattern("patterns/square.json", config)
+
+    #control = patterns.Pattern("patterns/square.json", config)
+    controller = gui.controller
 
     position = Sample()
 
@@ -52,15 +54,16 @@ try:
         proxy.broadcast.latch_values()
         delta_t = integration_timer()
 
-        gui.update(delta_t)
-
-        pattern.update(delta_t)
-        drive.update(pattern.forward, pattern.turn)
-
-        drive.modify_sample(position)
+        controller.update(delta_t)
+        drive.update(controller.forward, controller.turn)
 
         gui.velocity = drive.forward_distance / delta_t
         gui.samples = [position]
+        gui.controller = controller
+
+        gui.update()
+
+        drive.modify_sample(position)
 
         if gui.finished:
             break

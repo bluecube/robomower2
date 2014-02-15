@@ -46,7 +46,7 @@ class MapWidget:
         # Samples
         for sample in self.samples:
             x = int((sample.x + self.offset[0]) * scale)
-            y = int((sample.y + self.offset[1]) * scale)
+            y = -int((sample.y + self.offset[1]) * scale)
 
             if abs(x) > w/2 or abs(y) > h/2:
                 continue
@@ -57,9 +57,9 @@ class MapWidget:
             c = int(math.cos(sample.heading) * sample_radius)
             s = int(math.sin(sample.heading) * sample_radius)
             pygame.draw.polygon(surface, config.color1,
-                                [(x + c, y + s),
-                                 (x + (s - c) // 2, y + (- c - s) // 2),
-                                 (x + (- s - c) // 2, y + (c - s) // 2)])
+                                [(x + c, y - s),
+                                 (x + (s - c) // 2, y - (- c - s) // 2),
+                                 (x + (- s - c) // 2, y - (c - s) // 2)])
 
         # Cross
         cross = min(w, h) / 30
