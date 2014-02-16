@@ -28,12 +28,13 @@ class Gui:
         self.controller = controller.GuiController(self);
 
         self._velocity = widgets.Dial("velocity", 0, lim["velocity"], "%.1f", "%.2f", "m/s")
+        self._load = widgets.Dial("CPU load", 0, 100, "%d", "%d", "%")
         self._drive = widgets.Xy("",
                                  -lim["angular_velocity"],
                                  lim["velocity"],
                                  "%.2f rad/s", "%.2f m/s")
         self._grid = widgets.Grid(self.grid_columns,
-                                  [self._velocity, self._drive],
+                                  [self._velocity, self._load, self._drive],
                                   5)
         self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
 
@@ -71,7 +72,7 @@ class Gui:
 
     @property
     def velocity(self):
-        return self._velocity.value
+        raise AttributeError("Write only!")
 
     @velocity.setter
     def velocity(self, value):
@@ -79,8 +80,16 @@ class Gui:
 
     @property
     def samples(self):
-        return self._map.samples
+        raise AttributeError("Write only!")
 
     @samples.setter
     def samples(self, value):
         self._map.samples = value
+
+    @property
+    def load(self):
+        raise AttributeError("Write only!")
+
+    @load.setter
+    def load(self, value):
+        self._load.value = 100 * value

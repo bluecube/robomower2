@@ -52,7 +52,7 @@ try:
     sleep_timer = util.TimeElapsed()
     while True:
         proxy.broadcast.latch_values()
-        delta_t = integration_timer()
+        delta_t, main_loop_load = sleep_timer.tick(0.1)
 
         controller.update(delta_t)
         drive.update(controller.forward, controller.turn)
@@ -60,15 +60,13 @@ try:
         gui.velocity = drive.forward_distance / delta_t
         gui.samples = [position]
         gui.controller = controller
-
+        gui.load = main_loop_load
         gui.update()
 
         drive.modify_sample(position)
 
         if gui.finished:
             break
-
-        sleep_timer.tick(0.1)
 
 except KeyboardInterrupt:
     print() # To get rid of the ^C on the current line in console
