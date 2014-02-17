@@ -60,7 +60,7 @@ try:
 
         drive.update(controller.forward, controller.turn)
 
-        data_logger.write(drive.left_ticks, drive.right_ticks)
+        data_logger.write(delta_t, drive.left_ticks, drive.right_ticks)
 
         gui.velocity = drive.forward_distance / delta_t
         gui.samples = [position]
