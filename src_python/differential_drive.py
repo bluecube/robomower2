@@ -24,14 +24,11 @@ class DifferentialDrive:
 
     def update(self, forward, turn):
         turn_speed = turn * self.wheel_base / 2
-        left = forward - turn_speed
-        right = forward + turn_speed
+        self.left_command = int((forward - turn_speed) / self.velocity_resolution)
+        self.right_command = int((forward + turn_speed) / self.velocity_resolution)
 
-        left /= self.velocity_resolution
-        right /= self.velocity_resolution
-
-        self.left_ticks = self.left_proxy.update(left)['distance']
-        self.right_ticks = self.right_proxy.update(right)['distance']
+        self.left_ticks = self.left_proxy.update(self.left_command)['distance']
+        self.right_ticks = self.right_proxy.update(self.right_command)['distance']
 
     def modify_sample(self, sample):
         forward = self.forward_distance

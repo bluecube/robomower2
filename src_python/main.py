@@ -45,8 +45,8 @@ try:
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
     gui = gui.Gui(config)
 
-    controller = patterns.Pattern("patterns/square.json", config)
-    #controller = gui.controller
+    #controller = patterns.Pattern("patterns/square.json", config)
+    controller = gui.controller
 
     position = Sample()
 
@@ -60,7 +60,9 @@ try:
 
         drive.update(controller.forward, controller.turn)
 
-        data_logger.write(delta_t, drive.left_ticks, drive.right_ticks)
+        data_logger.write(delta_t,
+                          drive.left_command, drive.right_command,
+                          drive.left_ticks, drive.right_ticks)
 
         gui.velocity = drive.forward_distance / delta_t
         gui.samples = [position]
