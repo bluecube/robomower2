@@ -12,6 +12,7 @@ import fake_hw
 import differential_drive
 import patterns
 
+import datalogger
 import gui
 
 class Sample:
@@ -26,6 +27,7 @@ with open("config.json", "r") as fp:
 logging.config.dictConfig(config['logging'])
 
 logger = logging.getLogger(__name__)
+data_logger = datalogger.DataLogger("/tmp")
 try:
     logger.info("Hello!")
 
@@ -43,8 +45,8 @@ try:
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
     gui = gui.Gui(config)
 
-    #control = patterns.Pattern("patterns/square.json", config)
-    controller = gui.controller
+    controller = patterns.Pattern("patterns/square.json", config)
+    #controller = gui.controller
 
     position = Sample()
 
@@ -55,7 +57,10 @@ try:
         delta_t, main_loop_load = sleep_timer.tick(0.1)
 
         controller.update(delta_t)
+
         drive.update(controller.forward, controller.turn)
+
+        data_logger.write(drive.left_ticks, drive.right_ticks)
 
         gui.velocity = drive.forward_distance / delta_t
         gui.samples = [position]

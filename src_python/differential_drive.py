@@ -30,11 +30,8 @@ class DifferentialDrive:
         left /= self.velocity_resolution
         right /= self.velocity_resolution
 
-        left_distance = self.left_proxy.update(left)['distance']
-        right_distance = self.right_proxy.update(right)['distance']
-
-        self.left_distance = left_distance * self.resolution
-        self.right_distance = right_distance * self.resolution
+        self.left_ticks = self.left_proxy.update(left)['distance']
+        self.right_ticks = self.right_proxy.update(right)['distance']
 
     def modify_sample(self, sample):
         forward = self.forward_distance
@@ -55,8 +52,8 @@ class DifferentialDrive:
 
     @property
     def forward_distance(self):
-        return (self.left_distance + self.right_distance) / 2
+        return self.resolution * (self.left_ticks + self.right_ticks) / 2
 
     @property
     def turn_angle(self):
-        return (self.right_distance - self.left_distance) / self.wheel_base
+        return self.resolution * (self.right_ticks - self.left_ticks) / self.wheel_base
