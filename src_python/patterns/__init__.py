@@ -1,6 +1,7 @@
 import json
 import math
 import logging
+import os.path
 
 class Pattern:
     logger = logging.getLogger(__name__)
@@ -9,6 +10,7 @@ class Pattern:
         with open(filename, "r") as fp:
             self._pattern_iter = iter(json.load(fp))
 
+        self.name = "Pattern {}".format(os.path.basename(filename))
         self._limits = config["limits"]
         self._next_part()
 
@@ -65,10 +67,10 @@ class Pattern:
         """ Calculate times to drive distance s with speed limit v and acceleration
         limit a. Returns tuple of time to accelerate / deccelerate and time to keep max speed"""
 
-        t_a = self._limits["velocity"] / self._limits["acceleration"]
+        t_a = v / a
         s_a = v * t_a
 
-        if 2 * s_a >= s:
+        if s_a >= s:
             return (math.sqrt(s / a), 0)
         else:
             return (t_a, (s - s_a) / v)
