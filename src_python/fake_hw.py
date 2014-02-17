@@ -9,7 +9,7 @@ class _DriveProxy:
     def update(self, command):
         previous = self._command
         self._command = command
-        return {"distance": previous * self.PID_FREQUENCY * self._parent._elapsed}
+        return {"distance": round(previous * self.PID_FREQUENCY * self._parent._elapsed)}
 
     def params(self, *args, **kwargs):
         pass
