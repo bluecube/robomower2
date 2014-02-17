@@ -15,7 +15,7 @@
     },
 
     "gui": {
-        "joystick_nonlinearity": 0.5,
+        "joystick_nonlinearity": 0.7,
         "map_zoom": 35
     },
 
