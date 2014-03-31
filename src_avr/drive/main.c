@@ -167,6 +167,7 @@ void handle_params_request(const struct params_request* in)
     {
         kP = in->kP;
         kI = in->kI;
+        kD = in->kD;
     }
 }
 
