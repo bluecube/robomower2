@@ -5,6 +5,12 @@ import codegen_helper
 import interface
 import string
 
+def _type(t):
+    ret = "int" + str(t.size) + "_t"
+    if t.unsigned:
+        ret = "u" + ret
+    return ret
+
 def _string(s):
     ret = ['"']
     for char in s:
@@ -22,8 +28,10 @@ def _struct(struct, name, f):
 
     f("struct {}", name)
     f.open_brace()
-    for name, t in struct.members.items():
-        f("{}_t {};", t, name)
+    for field_name, t in struct.members.items():
+        f("{} {};", _type(t), field_name)
+        if t.multiplier != 1:
+            f("#define {}_{}_MULTIPLIER {}", name.upper(), field_name.upper(), t.multiplier)
     f.close_brace("}};")
 
 def _handle_function_decl(data, name, semicolon, f, extra_specifier = ""):

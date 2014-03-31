@@ -13,6 +13,12 @@
 #define DIRECTION_CHANGE_ZERO_CYCLE_COUNT 4
 #define SAFETY_TIMEOUT ((uint8_t)(1000 / SERVO_PERIOD))
 
+#if PARAMS_REQUEST_KP_MULTIPLIER == PARAMS_REQUEST_KI_MULTIPLIER && PARAMS_REQUEST_KP_MULTIPLIER == PARAMS_REQUEST_KD_MULTIPLIER
+    #define PID_MULTIPLIER PARAMS_REQUEST_KP_MULTIPLIER
+#else
+    #error "Different multipliers for kP, kI and kD"
+#endif
+
 union byteaccess
 {
     uint16_t u16;
@@ -229,9 +235,9 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 
     integratorState = clamp(integratorState + error,
                             -SERVO_RANGE_TICKS, SERVO_RANGE_TICKS);
-    int16_t tmpOutput = clamp(error * kP +
+    int16_t tmpOutput = clamp((error * kP +
                               integratorState * kI +
-                              difference * kD,
+                              difference * kD) / PID_MULTIPLIER,
                               0, SERVO_RANGE_TICKS);
     if (currentDirection < 0)
         tmpOutput = -tmpOutput;

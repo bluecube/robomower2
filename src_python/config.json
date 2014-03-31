@@ -8,8 +8,8 @@
         "wheel_base": 460e-3,
         "resolution": 729.774e-6,
         "PID": {
-            "kP": 20,
-            "kI": 1,
+            "kP": 30,
+            "kI": 0.5,
             "kD": 80
         }
     },
