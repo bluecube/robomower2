@@ -197,13 +197,22 @@ class Grid:
             pass
 
 class Slider:
-    def __init__(self, label, min, max, fmt = "%.2f"):
+    power = 4
+
+    def __init__(self, label, min, max, fmt = "%.2f", power = 2):
         self.label = label
         self.value = min
-        self.min = min
-        self.max = max
+        self._min = min
+        self._max = max
         self.fmt = fmt
         self.callback = None
+        self._power = power
+
+    def _pseudolog(self, val):
+        return val ** (1/self._power)
+
+    def _pseudolog_inv(self, val):
+        return val ** self._power
 
     def draw(self, surface, x, y, w, h, mouse):
         spacing = int(config.font.get_height() * 0.3)
@@ -228,11 +237,11 @@ class Slider:
 
         if mouse is not None and mouse[0] >= x and mouse[0] < x + w and \
            mouse[1] >= y and mouse[1] < bottom:
-            self.value = self.min + (self.max - self.min) * (bottom - mouse[1]) / rect_height
+            self.value = self._min + (self._max - self._min) * self._pseudolog_inv((bottom - mouse[1]) / rect_height)
             if self.callback is not None:
                 self.callback()
 
-        value_height = int(rect_height * (self.value - self.min) / (self.max - self.min))
+        value_height = int(rect_height * self._pseudolog((self.value - self._min) / (self._max - self._min)))
 
         pygame.draw.rect(surface, config.color1_50, pygame.Rect(x + spacing, bottom - value_height, w - 2 * spacing, value_height), 0)
         pygame.draw.rect(surface, config.color1, pygame.Rect(x + spacing, y, w - 2 * spacing, rect_height), 1)
