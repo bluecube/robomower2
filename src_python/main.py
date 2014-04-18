@@ -40,10 +40,13 @@ try:
             robonet.RoboNet(config["robonet"]["port"], config["robonet"]["baudrate"]))
     except robonet.RoboNetException:
         proxy = fake_hw.FakeHw()
-    proxy.right.params(kP = 20, kI = 1, kD = 80)
-    proxy.left.params(kP = 20, kI = 1, kD = 80)
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
     gui = gui.Gui(config)
+
+    gui.kP = config["drive"]["PID"]["kP"]
+    gui.kI = config["drive"]["PID"]["kI"]
+    gui.kD = config["drive"]["PID"]["kD"]
+    gui.pid_callback = lambda: drive.set_pid(gui.kP, gui.kI, gui.kD)
 
     #controller = patterns.Pattern("patterns/square.json", config)
     controller = gui.controller

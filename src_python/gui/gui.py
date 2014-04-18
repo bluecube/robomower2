@@ -33,12 +33,20 @@ class Gui:
                                  -lim["angular_velocity"],
                                  lim["velocity"],
                                  "%.2f rad/s", "%.2f m/s")
+        self._p_slider = widgets.Slider("kP", 0, 128, "%.1f")
+        self._i_slider = widgets.Slider("kI", 0, 128, "%.1f")
+        self._d_slider = widgets.Slider("kD", 0, 128, "%.1f")
+        self._pid_grid = widgets.Grid(3, [self._p_slider, self._i_slider, self._d_slider], 0)
+
+
         self._grid = widgets.Grid(self.grid_columns,
-                                  [self._velocity, self._load, self._drive],
+                                  [self._velocity, self._load, self._drive, self._pid_grid],
                                   5)
         self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
 
         self.logger.info("GUI ready")
+
+        self._mouse = None
 
     def draw(self):
         w, h = self.screen.get_size()
@@ -47,8 +55,10 @@ class Gui:
 
 
         self._grid.draw(self.screen, w - self.grid_width, 0,
-                        self.grid_width, self._grid.rows * self.grid_cell_size)
-        self._map.draw(self.screen, 0, 0, w - self.grid_width, h)
+                        self.grid_width, self._grid.rows * self.grid_cell_size,
+                        self._mouse)
+        self._map.draw(self.screen, 0, 0, w - self.grid_width, h,
+                       self._mouse)
 
     def update(self):
         for event in pygame.event.get():
@@ -62,6 +72,9 @@ class Gui:
                     self._map.zoom(1)
                 elif event.button == 5:
                     self._map.zoom(-1)
+            elif event.type == pygame.MOUSEMOTION:
+                if event.buttons[0]:
+                    self._mouse = event.pos
 
         self._drive.x = self.controller.turn
         self._drive.y = self.controller.forward
@@ -93,3 +106,37 @@ class Gui:
     @load.setter
     def load(self, value):
         self._load.value = 100 * value
+
+    @property
+    def kP(self):
+        return self._p_slider.value
+
+    @kP.setter
+    def kP(self, value):
+        self._p_slider.value = value
+
+    @property
+    def kI(self):
+        return self._i_slider.value
+
+    @kI.setter
+    def kI(self, value):
+        self._i_slider.value = value
+
+    @property
+    def kD(self):
+        return self._d_slider.value
+
+    @kD.setter
+    def kD(self, value):
+        self._d_slider.value = value
+
+    @property
+    def pid_callback(self):
+        raise AttributeError("Write only!")
+
+    @pid_callback.setter
+    def pid_callback(self, callback):
+        self._p_slider.callback = callback
+        self._i_slider.callback = callback
+        self._d_slider.callback = callback

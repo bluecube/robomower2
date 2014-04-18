@@ -8,7 +8,7 @@ class MapWidget:
         self.samples = []
         self.offset = (0, 0)
 
-    def draw(self, surface, x, y, w, h):
+    def draw(self, surface, x, y, w, h, mouse):
         scale = 1.1**self._zoom
         x_center = x + w // 2
         y_center = y + h // 2

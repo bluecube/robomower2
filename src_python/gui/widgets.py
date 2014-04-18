@@ -20,7 +20,7 @@ class Dial:
         self.value_format = value_format
         self.unit = unit
 
-    def draw(self, surface, x, y, w, h):
+    def draw(self, surface, x, y, w, h, mouse):
         font_height = config.font.get_height()
         size = min(w - 1.5 * font_height, h)
         radius = int(0.45 * size)
@@ -143,7 +143,7 @@ class Xy:
         else:
             self._label = value
 
-    def draw(self, surface, x, y, w, h):
+    def draw(self, surface, x, y, w, h, mouse):
         spacing = int(config.font.get_height() * 0.3)
 
         for i, row in enumerate(self._label):
@@ -182,7 +182,7 @@ class Grid:
         self.items = items
         self.padding = padding
 
-    def draw(self, surface, x, y, w, h):
+    def draw(self, surface, x, y, w, h, mouse):
         item_width = int(w / self.columns - 2 * self.padding)
         item_height = int(h / self.rows - 2 * self.padding)
 
@@ -192,6 +192,47 @@ class Grid:
                 xx = x + item_width * i + self.padding
                 for j in range(self.rows):
                     yy = y + item_height * j + self.padding
-                    next(iterator).draw(surface, xx, yy, item_width, item_height)
+                    next(iterator).draw(surface, xx, yy, item_width, item_height, mouse)
         except StopIteration:
             pass
+
+class Slider:
+    def __init__(self, label, min, max, fmt = "%.2f"):
+        self.label = label
+        self.value = min
+        self.min = min
+        self.max = max
+        self.fmt = fmt
+        self.callback = None
+
+    def draw(self, surface, x, y, w, h, mouse):
+        spacing = int(config.font.get_height() * 0.3)
+
+        text = config.font.render(self.label,
+                                  antialias=True,
+                                  color=config.color1,
+                                  background=config.bgcolor)
+        surface.blit(text, (x + (w - text.get_width()) / 2,
+                            y + h - text.get_height()))
+
+        text = config.font.render(self.fmt % (self.value + 0),
+                                  antialias=True,
+                                  color=config.color1,
+                                  background=config.bgcolor)
+        bottom = y + h - text.get_height() - config.font.get_linesize()
+        surface.blit(text, (x + (w - text.get_width()) / 2, bottom))
+
+        bottom -= spacing;
+
+        rect_height = bottom - y;
+
+        if mouse is not None and mouse[0] >= x and mouse[0] < x + w and \
+           mouse[1] >= y and mouse[1] < bottom:
+            self.value = self.min + (self.max - self.min) * (bottom - mouse[1]) / rect_height
+            if self.callback is not None:
+                self.callback()
+
+        value_height = int(rect_height * (self.value - self.min) / (self.max - self.min))
+
+        pygame.draw.rect(surface, config.color1_50, pygame.Rect(x + spacing, bottom - value_height, w - 2 * spacing, value_height), 0)
+        pygame.draw.rect(surface, config.color1, pygame.Rect(x + spacing, y, w - 2 * spacing, rect_height), 1)

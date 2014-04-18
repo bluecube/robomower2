@@ -15,12 +15,11 @@ class DifferentialDrive:
         self.velocity_resolution = self.resolution * left_proxy.PID_FREQUENCY
         assert(left_proxy.PID_FREQUENCY == right_proxy.PID_FREQUENCY)
 
-        left_proxy.params(config["drive"]["PID"]["kP"],
-                          config["drive"]["PID"]["kI"],
-                          config["drive"]["PID"]["kD"])
-        right_proxy.params(config["drive"]["PID"]["kP"],
-                           config["drive"]["PID"]["kI"],
-                           config["drive"]["PID"]["kD"])
+        self.set_pid(**config["drive"]["PID"])
+
+    def set_pid(self, kP, kI, kD):
+        self.left_proxy.params(kP, kI, kD)
+        self.right_proxy.params(kP, kI, kD)
 
     def update(self, forward, turn):
         turn_speed = turn * self.wheel_base / 2
