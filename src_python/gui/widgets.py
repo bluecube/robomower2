@@ -22,12 +22,12 @@ class Dial:
 
     def draw(self, surface, x, y, w, h, mouse):
         font_height = config.font.get_height()
-        size = min(w - 1.5 * font_height, h)
-        radius = int(0.45 * size)
-        text_radius = 0.52 * size + 0.75 * font_height
-        tick_radius = 0.5 * size + 0.2 * font_height
+        size = min(w - font_height, h)
+        radius = int(0.5 * size)
+        text_radius = 0.57 * size + 0.75 * font_height
+        tick_radius = 0.55 * size + 0.2 * font_height
         label_radius = int(0.1 * size)
-        arrow_radius = 0.395 * size
+        arrow_radius = 0.45 * size
         center_radius = 0.04 * size
         center_x = x + w // 2
         center_y = y + h // 2
@@ -183,15 +183,16 @@ class Grid:
         self.padding = padding
 
     def draw(self, surface, x, y, w, h, mouse):
-        item_width = int(w / self.columns - 2 * self.padding)
-        item_height = int(h / self.rows - 2 * self.padding)
+        item_width = int((w - (self.columns - 1) * self.padding) / self.columns)
+        item_height = int((h - (self.rows - 1) * self.padding) / self.rows)
 
         iterator = iter(self.items)
         try:
             for i in range(self.columns):
-                xx = x + item_width * i + self.padding
+                xx = x + item_width * i + self.padding * i
                 for j in range(self.rows):
-                    yy = y + item_height * j + self.padding
+                    yy = y + item_height * j + self.padding * j
+                    #pygame.draw.rect(surface, config.color1_50, pygame.Rect(xx, yy, item_width, item_height), 1)
                     next(iterator).draw(surface, xx, yy, item_width, item_height, mouse)
         except StopIteration:
             pass
@@ -215,8 +216,6 @@ class Slider:
         return val ** self._power
 
     def draw(self, surface, x, y, w, h, mouse):
-        spacing = int(config.font.get_height() * 0.3)
-
         text = config.font.render(self.label,
                                   antialias=True,
                                   color=config.color1,
@@ -231,8 +230,6 @@ class Slider:
         bottom = y + h - text.get_height() - config.font.get_linesize()
         surface.blit(text, (x + (w - text.get_width()) / 2, bottom))
 
-        bottom -= spacing;
-
         rect_height = bottom - y;
 
         if mouse is not None and mouse[0] >= x and mouse[0] < x + w and \
@@ -243,5 +240,5 @@ class Slider:
 
         value_height = int(rect_height * self._pseudolog((self.value - self._min) / (self._max - self._min)))
 
-        pygame.draw.rect(surface, config.color1_50, pygame.Rect(x + spacing, bottom - value_height, w - 2 * spacing, value_height), 0)
-        pygame.draw.rect(surface, config.color1, pygame.Rect(x + spacing, y, w - 2 * spacing, rect_height), 1)
+        pygame.draw.rect(surface, config.color1_50, pygame.Rect(x, bottom - value_height, w, value_height), 0)
+        pygame.draw.rect(surface, config.color1, pygame.Rect(x, y, w, rect_height), 1)

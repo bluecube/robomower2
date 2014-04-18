@@ -36,12 +36,11 @@ class Gui:
         self._p_slider = widgets.Slider("kP", 0, 128, "%.1f")
         self._i_slider = widgets.Slider("kI", 0, 128, "%.1f")
         self._d_slider = widgets.Slider("kD", 0, 128, "%.1f")
-        self._pid_grid = widgets.Grid(3, [self._p_slider, self._i_slider, self._d_slider], 0)
-
+        self._pid_grid = widgets.Grid(3, [self._p_slider, self._i_slider, self._d_slider], 10)
 
         self._grid = widgets.Grid(self.grid_columns,
                                   [self._velocity, self._load, self._drive, self._pid_grid],
-                                  5)
+                                  10)
         self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
 
         self.logger.info("GUI ready")
