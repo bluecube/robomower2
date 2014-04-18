@@ -13,9 +13,9 @@ speed = int8
 distance = int16
 
 [request:params]
-kP = int16(2)
-kI = int16(2)
-kD = int16(2)
+kP = int16(4)
+kI = int16(4)
+kD = int16(4)
 
 [response:params]
 # No data
