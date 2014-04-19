@@ -53,7 +53,6 @@ try:
 
     position = Sample()
 
-    integration_timer = util.TimeElapsed()
     sleep_timer = util.TimeElapsed()
     while True:
         proxy.broadcast.latch_values()
