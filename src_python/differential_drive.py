@@ -6,13 +6,11 @@ class DifferentialDrive:
         self.left_proxy = left_proxy
         self.right_proxy = right_proxy
         self.wheel_base = config["drive"]["wheel_base"]
-        self.resolution = config["drive"]["resolution"]
+        self.left_resolution = config["drive"]["left_resolution"]
+        self.right_resolution = config["drive"]["right_resolution"]
 
-        # status of the last update
-        self.left_distance = None
-        self.right_distance = None
-
-        self.velocity_resolution = self.resolution * left_proxy.PID_FREQUENCY
+        self.left_velocity_resolution = self.left_resolution * left_proxy.PID_FREQUENCY
+        self.right_velocity_resolution = self.right_resolution * right_proxy.PID_FREQUENCY
         assert(left_proxy.PID_FREQUENCY == right_proxy.PID_FREQUENCY)
 
         self.set_pid(**config["drive"]["PID"])
@@ -23,8 +21,8 @@ class DifferentialDrive:
 
     def update(self, forward, turn):
         turn_speed = turn * self.wheel_base / 2
-        self.left_command = int((forward - turn_speed) / self.velocity_resolution)
-        self.right_command = int((forward + turn_speed) / self.velocity_resolution)
+        self.left_command = int((forward - turn_speed) / self.left_velocity_resolution)
+        self.right_command = int((forward + turn_speed) / self.right_velocity_resolution)
 
         self.left_ticks = self.left_proxy.update(self.left_command)['distance']
         self.right_ticks = self.right_proxy.update(self.right_command)['distance']
@@ -48,8 +46,16 @@ class DifferentialDrive:
 
     @property
     def forward_distance(self):
-        return self.resolution * (self.left_ticks + self.right_ticks) / 2
+        return (self.left_distance + self.right_distance) / 2
 
     @property
     def turn_angle(self):
-        return self.resolution * (self.right_ticks - self.left_ticks) / self.wheel_base
+        return (self.right_distance - self.left_distance) / self.wheel_base
+
+    @property
+    def left_distance(self):
+        return self.left_resolution * self.left_ticks
+
+    @property
+    def right_distance(self):
+        return self.right_resolution * self.right_ticks
