@@ -33,11 +33,11 @@ class DifferentialDrive:
 
         alpha = sample.heading + turn / 2
 
-        # For circular paths, shifts of the sample should be multiplied
-        # by forward * 2 * math.sin(turn / 2) / turn instead of just forward
-        # However for our turn and update rates, we won't be seing turn larger
-        # than 0.1 => error is about 0.04%
-        assert abs(turn) < 0.15
+        ## For circular paths, shifts of the sample should be multiplied
+        ## by forward * 2 * math.sin(turn / 2) / turn instead of just forward
+        ## However for our turn and update rates, we won't be seing turn larger
+        ## than 0.1 => error is about 0.04%
+        #assert abs(turn) < 0.15
 
         sample.x += math.cos(alpha) * forward
         sample.y += math.sin(alpha) * forward

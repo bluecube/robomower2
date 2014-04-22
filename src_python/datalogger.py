@@ -32,3 +32,6 @@ class DataLogger:
     def write(self, *args):
         print(",".join(repr(x) for x in args), file=self._f)
 
+def load(path):
+    return (tuple(float(x.strip()) for x in line.split(b",")) for line in open(path, "rb"))
+
