@@ -7,7 +7,7 @@ import json
 
 import robonet
 import layer2
-import fake_hw
+import mock_hw
 
 import differential_drive
 import patterns
@@ -38,8 +38,9 @@ try:
                 (2, "left", "../src_avr/drive/drive.interface"),
             ],
             robonet.RoboNet(config["robonet"]["port"], config["robonet"]["baudrate"]))
-    except robonet.RoboNetException:
-        proxy = fake_hw.FakeHw()
+    except robonet.RoboNetException as e:
+        logger.info("Initialization of real hardware failed (%s). Using mock.", str(e))
+        proxy = mock_hw.MockHw()
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
     gui = gui.Gui(config)
 

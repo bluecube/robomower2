@@ -21,7 +21,7 @@ class _Broadcasts:
     def latch_values(self):
         self._parent._latch_values()
 
-class FakeHw:
+class MockHw:
     def __init__(self):
         self._timer = util.TimeElapsed()
         self._elapsed = None
