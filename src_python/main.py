@@ -41,7 +41,9 @@ try:
     except robonet.RoboNetException as e:
         logger.info("Initialization of real hardware failed (%s). Using mock.", str(e))
         proxy = mock_hw.MockHw()
-    drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config)
+
+    drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
+
     gui = gui.Gui(config)
 
     gui.kP = config["drive"]["PID"]["kP"]
@@ -67,13 +69,13 @@ try:
                           drive.left_command, drive.right_command,
                           drive.left_ticks, drive.right_ticks)
 
-        gui.velocity = drive.forward_distance / delta_t
+        #gui.velocity = drive.forward_distance / delta_t
         gui.samples = [position]
         gui.controller = controller
         gui.load = main_loop_load
         gui.update()
 
-        drive.modify_sample(position)
+        drive.update_sample(position)
 
         if gui.finished:
             break
