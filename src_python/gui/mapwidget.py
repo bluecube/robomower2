@@ -5,19 +5,27 @@ from . import config
 class MapWidget:
     def __init__(self, zoom):
         self._zoom = zoom
+        self.zoom(0)
         self.samples = []
         self.offset = (0, 0)
 
+        self.lines = None
+
     def draw(self, surface, x, y, w, h, mouse):
-        scale = 1.1**self._zoom
         x_center = x + w // 2
         y_center = y + h // 2
         sample_radius = 10
 
+        def projection(xx, yy):
+            xx = x_center + int((xx + self.offset[0]) * self._scale)
+            yy = y_center - int((yy + self.offset[1]) * self._scale)
+
+            return xx, yy
+
         # Scale
         width_available = w / 5
-        scale_value_step = 10 ** math.floor(math.log10(width_available / scale))
-        scale_step = scale * scale_value_step
+        scale_value_step = 10 ** math.floor(math.log10(width_available / self._scale))
+        scale_step = self._scale * scale_value_step
         scale_ticks = int(math.floor(width_available / scale_step))
         if scale_ticks == 1:
             scale_value_step /= 10
@@ -45,14 +53,7 @@ class MapWidget:
 
         # Samples
         for sample in self.samples:
-            x = int((sample.x + self.offset[0]) * scale)
-            y = -int((sample.y + self.offset[1]) * scale)
-
-            if abs(x) > w/2 or abs(y) > h/2:
-                continue
-
-            x += x_center
-            y += y_center
+            x, y = projection(sample.x, sample.y)
 
             c = int(math.cos(sample.heading) * sample_radius)
             s = int(math.sin(sample.heading) * sample_radius)
@@ -68,5 +69,16 @@ class MapWidget:
         pygame.draw.line(surface, config.color2,
                          (x_center, y_center - cross), (x_center, y_center + cross))
 
+        # extra lines
+        if self.lines is None:
+            return
+        for (x1, y1), (x2, y2) in self.lines:
+            x1, y1 = projection(x1, y1)
+            x2, y2 = projection(x2, y2)
+
+            pygame.draw.line(surface, config.color1_50,
+                             (x1, y1), (x2, y2))
+
     def zoom(self, step):
         self._zoom += step
+        self._scale = 1.1**self._zoom
