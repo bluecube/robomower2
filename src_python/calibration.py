@@ -1,8 +1,11 @@
 #!/usr/bin/python3
 
-import math
+from pprint import pprint
 
-import mock_hw
+import math
+import functools
+import scipy.optimize
+
 import differential_drive
 import datalogger
 
@@ -45,11 +48,14 @@ def squaredDistanceFromLines(p, lines):
 def loadRecording(path):
     return [x[2:4] for x in datalogger.load(path) if x[2] != 0 or x[3] != 0]
 
-def objective(ticks, ground_truth, x, y, heading, **kwargs):
+def objective(ticks,ground_truth, state_vector):
     """ Objective function to minimize.
     First two arguments contain the driven path and ground truth, rest are
     state vector elements.
     Returns sum of squared distances from the ground truth over the whole path. """
+
+    x, y, heading, left_resolution, right_resolution, wheel_base = state_vector
+
     class Sample:
         pass
     sample = Sample()
@@ -57,25 +63,32 @@ def objective(ticks, ground_truth, x, y, heading, **kwargs):
     sample.y = y
     sample.heading = heading
 
-    mockHw = mock_hw.MockHw()
-    drive = differential_drive.DifferentialDrive(mockHw.left,
-                                                 mockHw.right,
-                                                 {"drive": kwargs})
+    drive = differential_drive.DifferentialDriveModel(left_resolution,
+                                                      right_resolution,
+                                                      wheel_base)
 
-    distance = 0
+    distance = squaredDistanceFromLines((x, y), ground_truth)
+
     for left_ticks, right_ticks in ticks:
-        drive.left_ticks = left_ticks
-        drive.right_ticks = right_ticks
-
+        drive.update_sample(sample, left_ticks, right_ticks);
         distance += squaredDistanceFromLines((sample.x, sample.y), ground_truth)
 
-        drive.modify_sample(sample);
-
+    #pprint([float(x) for x in state_vector])
+    #pprint(float(distance))
+    #print()
     return distance
 
-def optimize():
-    pass
-
+def optimize(ticks, ground_truth, left_resolution, right_resolution, wheel_base, **kwargs):
+    result = scipy.optimize.minimize(functools.partial(objective, ticks, ground_truth),
+                                     [0, 0, 0, # Initial position and orientation
+                                      left_resolution, right_resolution, wheel_base],
+                                     options = {"disp": True, "maxiter": 1000},
+                                     method = "TNC",
+                                     bounds = [(-1, 1), (-1, 1), (-2, 2),
+                                                (0.5 * left_resolution, 2 * left_resolution),
+                                                (0.5 * right_resolution, 2 * right_resolution),
+                                                (0.5 * wheel_base, 2 * wheel_base)])
+    print(result)
 def c(x):
     return math.cos(math.radians(x))
 
@@ -105,10 +118,11 @@ ground_truth = [
 
 if __name__ == "__main__":
     import json
+    import sys
 
     with open("config.json", "r") as fp:
         config = json.load(fp)
 
-    recording = loadRecording("/tmp/robomower-recording-2014-04-19-1.txt")
+    recording = loadRecording(sys.argv[1])
 
-    print(objective(recording, ground_truth, 0, 0, 0, **config["drive"]))
+    print(optimize(recording, ground_truth, **config["drive"]))
