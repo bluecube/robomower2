@@ -70,12 +70,12 @@ try:
                           drive.left_ticks, drive.right_ticks)
 
         #gui.velocity = drive.forward_distance / delta_t
-        gui.samples = [position]
         gui.controller = controller
         gui.load = main_loop_load
         gui.update()
 
-        drive.update_sample(position)
+        position = drive.update_sample(position)
+        gui.samples = [position]
 
         if gui.finished:
             break

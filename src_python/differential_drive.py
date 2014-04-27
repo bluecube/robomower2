@@ -1,4 +1,5 @@
 import math
+import copy
 
 class DifferentialDriveModel:
     """ Model for arbitrary differential drive.
@@ -10,7 +11,7 @@ class DifferentialDriveModel:
         self.wheel_base = wheel_base
 
     def update_sample(self, sample, left_ticks, right_ticks):
-        """ Modifies the sample according to measured movement.
+        """ Returns a new sample updated according to measured movement.
         TODO: Sampling from the drive probability distributions. """
 
         left_distance = left_ticks * self.left_resolution
@@ -27,10 +28,19 @@ class DifferentialDriveModel:
         # than 0.1 => error is about 0.04%
         #assert abs(turn) < 0.15 # this is not true in the calibration
 
+        sample = copy.copy(sample)
+
         sample.x += math.cos(alpha) * forward
         sample.y += math.sin(alpha) * forward
 
         sample.heading += turn
+
+        return sample
+
+    def update_sample_iter(self, sample, ticks):
+        for left_ticks, right_ticks in ticks:
+            sample = self.update_sample(sample, left_ticks, right_ticks);
+            yield sample
 
     def velocity_to_ticks(self, forward, turn):
         """ Return left and right motor speed in ticks/s to achieve the
@@ -68,4 +78,4 @@ class DifferentialDrive:
         self.right_ticks = self.right_proxy.update(self.right_command)['distance']
 
     def update_sample(self, sample):
-        self.model.update_sample(sample, self.left_ticks, self.right_ticks)
+        return self.model.update_sample(sample, self.left_ticks, self.right_ticks)
