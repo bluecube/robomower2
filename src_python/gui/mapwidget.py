@@ -14,7 +14,6 @@ class MapWidget:
     def draw(self, surface, x, y, w, h, mouse):
         x_center = x + w // 2
         y_center = y + h // 2
-        sample_radius = 10
 
         def projection(xx, yy):
             xx = x_center + int((xx + self.offset[0]) * self._scale)
@@ -51,7 +50,19 @@ class MapWidget:
                                                                  scale_step + 1, text.get_height() // 2),
                              i % 2)
 
+        # extra lines
+        if self.lines is not None:
+            for (x1, y1), (x2, y2) in self.lines:
+                x1, y1 = projection(x1, y1)
+                x2, y2 = projection(x2, y2)
+
+                pygame.draw.line(surface, config.color1_50,
+                                 (x1, y1), (x2, y2))
+
         # Samples
+        if len(self.samples) > 0:
+            sample_radius = max(5, min(10, math.sqrt(10**2 / len(self.samples) / 10)))
+
         for sample in self.samples:
             x, y = projection(sample.x, sample.y)
 
@@ -68,16 +79,6 @@ class MapWidget:
                          (x_center - cross, y_center), (x_center + cross, y_center))
         pygame.draw.line(surface, config.color2,
                          (x_center, y_center - cross), (x_center, y_center + cross))
-
-        # extra lines
-        if self.lines is None:
-            return
-        for (x1, y1), (x2, y2) in self.lines:
-            x1, y1 = projection(x1, y1)
-            x2, y2 = projection(x2, y2)
-
-            pygame.draw.line(surface, config.color1_50,
-                             (x1, y1), (x2, y2))
 
     def zoom(self, step):
         self._zoom += step
