@@ -8,6 +8,8 @@
         "wheel_base": 460e-3,
         "left_resolution": 729.774e-6,
         "right_resolution": 729.774e-6,
+        "left_sigma": 5e-2,
+        "right_sigma": 5e-2,
         "PID": {
             "kP": 30,
             "kI": 0.5,

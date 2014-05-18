@@ -15,6 +15,8 @@ import patterns
 import datalogger
 import gui
 
+import calibration
+
 class Sample:
     def __init__(self):
         self.x = 0
@@ -45,6 +47,7 @@ try:
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
 
     gui = gui.Gui(config)
+    gui._map.lines = calibration.ground_truth
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]
@@ -54,7 +57,7 @@ try:
     #controller = patterns.Pattern("patterns/square.json", config)
     controller = gui.controller
 
-    position = Sample()
+    samples = [Sample() for i in range(100)]
 
     sleep_timer = util.TimeElapsed()
     while True:
@@ -74,8 +77,8 @@ try:
         gui.load = main_loop_load
         gui.update()
 
-        position = drive.update_sample(position)
-        gui.samples = [position]
+        samples = [drive.update_sample(s) for s in samples]
+        gui.samples = samples
 
         if gui.finished:
             break

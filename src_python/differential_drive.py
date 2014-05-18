@@ -1,21 +1,27 @@
 import math
 import copy
+import random
 
 class DifferentialDriveModel:
     """ Model for arbitrary differential drive.
     Handles conversions from left/right ticks to velicities and turn rates."""
 
-    def __init__(self, left_resolution, right_resolution, wheel_base):
+    def __init__(self,
+                 left_resolution, right_resolution,
+                 left_sigma, right_sigma,
+                 wheel_base):
         self.left_resolution = left_resolution
         self.right_resolution = right_resolution
+        self.left_sigma = left_sigma
+        self.right_sigma = right_sigma
         self.wheel_base = wheel_base
 
     def update_sample(self, sample, left_ticks, right_ticks):
         """ Returns a new sample updated according to measured movement.
         TODO: Sampling from the drive probability distributions. """
 
-        left_distance = left_ticks * self.left_resolution
-        right_distance = right_ticks * self.right_resolution
+        left_distance = left_ticks * self.left_resolution * random.gauss(1, self.left_sigma)
+        right_distance = right_ticks * self.right_resolution * random.gauss(1, self.right_sigma)
 
         forward = (left_distance + right_distance) * 0.5
         turn = (right_distance - left_distance) / self.wheel_base
@@ -61,6 +67,8 @@ class DifferentialDrive:
 
         self.model = DifferentialDriveModel(config["left_resolution"],
                                             config["right_resolution"],
+                                            config["left_sigma"],
+                                            config["right_sigma"],
                                             config["wheel_base"])
         self.set_pid(**config["PID"])
 
