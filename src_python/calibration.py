@@ -22,8 +22,6 @@ def squaredDistanceFromLine(point, line):
     dx = x2 - x1
     dy = y2 - y1
 
-    lineLength = math.sqrt(dx * dx + dy * dy)
-
     t1 = (dx * (x - x1) + dy * (y - y1))
     t2 = (dx * (x2 - x) + dy * (y2 - y))
 
@@ -32,9 +30,8 @@ def squaredDistanceFromLine(point, line):
     elif t2 <= 0:
         return squaredDistanceFromPoint(point, line[1])
     else:
-        t1 /= math.sqrt(dx * dx + dy * dy)
-
-        return squaredDistanceFromPoint(point, (x1 + dx * t1, y1 + dy * t1))
+        tmp = (dy * x - dx * y - x1 * y2 + x2 * y1)
+        return tmp * tmp / (dx * dx + dy * dy)
 
 def squaredDistanceFromLines(p, lines):
     return min(squaredDistanceFromLine(p, line) for line in lines)
