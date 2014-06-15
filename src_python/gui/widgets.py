@@ -1,11 +1,7 @@
 import math
+import logging
 import pygame.draw
 from . import config
-
-class Null:
-    """ Empty widget """
-    def draw(self, surface, x, y, w, h):
-        pass
 
 class Dial:
     MIN_ANGLE = (5 / 4) * math.pi
@@ -242,3 +238,33 @@ class Slider:
 
         pygame.draw.rect(surface, config.color1_50, pygame.Rect(x, bottom - value_height, w, value_height), 0)
         pygame.draw.rect(surface, config.color1, pygame.Rect(x, y, w, rect_height), 1)
+
+class LogWidget(logging.Handler):
+    def __init__(self, bottom_to_top):
+        super().__init__()
+        self._lines = []
+        self._bottom_to_top = bottom_to_top
+
+    def emit(self, record):
+        self.add_line(self.format(record), record.levelno >= logging.WARNING)
+
+    def add_line(self, string, red):
+        self._lines.append((string, red))
+
+    def draw(self, surface, x, y, w, h, mouse):
+        lines = int(h / config.font.get_linesize())
+        for i in range(len(self._lines) - lines):
+            self._lines.popleft()
+
+        if self._bottom_to_top:
+            y += h - len(self._lines) * config.font.get_linesize()
+
+        for string, red in self._lines:
+            color = config.color2 if red else config.color1
+
+            text = config.font.render(string,
+                                      antialias=True,
+                                      color=color,
+                                      background=config.bgcolor)
+            surface.blit(text, (x, y))
+            y += config.font.get_linesize()

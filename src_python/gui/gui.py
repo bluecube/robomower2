@@ -43,6 +43,10 @@ class Gui:
                                   10)
         self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
 
+        self._log_widget = widgets.LogWidget(True)
+        self._log_widget.setFormatter(logging.Formatter("%(asctime)s %(name)s: %(message)s", "%H:%M:%S"))
+        logging.getLogger().addHandler(self._log_widget)
+
         self.logger.info("GUI ready")
 
         self._mouse = None
@@ -53,10 +57,17 @@ class Gui:
         self.screen.fill(config.bgcolor)
 
 
-        self._grid.draw(self.screen, w - self.grid_width, 0,
+        self._grid.draw(self.screen,
+                        w - self.grid_width, 0,
                         self.grid_width, self._grid.rows * self.grid_cell_size,
                         self._mouse)
-        self._map.draw(self.screen, 0, 0, w - self.grid_width, h,
+        self._log_widget.draw(self.screen,
+                              0, h * 0.7,
+                              w - self.grid_width, h * 0.3,
+                              self._mouse)
+        self._map.draw(self.screen,
+                       0, 0,
+                       w - self.grid_width, h,
                        self._mouse)
 
     def update(self):

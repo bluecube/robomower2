@@ -13,7 +13,7 @@ import differential_drive
 import patterns
 
 import datalogger
-import gui
+import gui as robotgui
 
 import calibration
 
@@ -29,8 +29,9 @@ with open("config.json", "r") as fp:
 logging.config.dictConfig(config['logging'])
 
 logger = logging.getLogger(__name__)
-data_logger = datalogger.DataLogger("/tmp")
 try:
+    gui = robotgui.Gui(config)
+
     logger.info("Hello!")
 
     try:
@@ -46,7 +47,6 @@ try:
 
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
 
-    gui = gui.Gui(config)
     gui._map.lines = calibration.ground_truth
 
     gui.kP = config["drive"]["PID"]["kP"]
@@ -57,7 +57,9 @@ try:
     #controller = patterns.Pattern("patterns/square.json", config)
     controller = gui.controller
 
-    samples = [Sample() for i in range(100)]
+    data_logger = datalogger.DataLogger("/tmp")
+
+    samples = [Sample() for i in range(1)]
 
     sleep_timer = util.TimeElapsed()
     while True:
