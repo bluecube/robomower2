@@ -3,6 +3,8 @@ import numpy
 import itertools
 
 # Based on http://www.cim.mcgill.ca/~stephane/cs507/Project.html
+# This implementation only calculate approximation of the Frechet distance, because
+# we don't consider all of the poosible critical values of epsilon (see todo note).
 
 def squared_points_distance(p1, p2):
     x1, y1 = p1
@@ -97,18 +99,32 @@ def _decision(pl1, pl2, epsilon):
 
     return b[(n - 1) % 2, m - 1] <= 1 or l[(n - 1) % 2, (m - 1)] <= 1
 
-def critical_epsilons(pl1, pl2):
-    min_epsilon = math.sqrt(max(squared_points_distance(pl1[0], pl2[0]),
-                                squared_points_distance(pl1[-1], pl2[-1])))
+def _critical_epsilons_half(pl1, pl2):
+    for l in zip(pl1[:-1], pl1[1:]):
+        for i, p in enumerate(pl2[1:-1]):
+            dx = l[1][0] - l[0][0]
+            dy = l[1][1] - l[0][1]
+            length = math.hypot(dx, dy)
 
-    yield min_epsilon
+            # The simple case: Distance between each segment of pl1 and each point of pl2
+            yield abs((dy * p[0] - dx * p[1] - l[0][0] * l[1][1] + l[1][0] * l[0][1]) / length)
 
-    segments1 = list(zip(pl1[:-1], pl1[1:]))
-    segments2 = list(zip(pl2[:-1], pl2[1:]))
+def _unique(iterable):
+    it = iter(iterable)
+    previous = next(it)
+    for x in it:
+        if x != previous:
+            yield previous
+            previous = x
+    yield previous
 
-    for l1 in segments1:
-        for l2 in segments2:
-            pass
+def _critical_epsilons(pl1, pl2):
+    """ Return candidate values of epsilon for the actual Frechet distance"""
+
+    yield math.sqrt(squared_points_distance(pl1[0], pl2[0]))
+    yield math.sqrt(squared_points_distance(pl1[-1], pl2[-1]))
+    yield from _critical_epsilons_half(pl1, pl2)
+    yield from _critical_epsilons_half(pl2, pl1)
 
 def frechet_distance_decision(pl1, pl2, epsilon):
     """Decides if polylines pl1 and pl2 have Frechet distance lower or equal to epsilon."""
@@ -125,19 +141,19 @@ def frechet_distance_decision(pl1, pl2, epsilon):
     return _decision(pl1, pl2, epsilon)
 
 def frechet_distance(pl1, pl2):
-    # to decrease memory requirements of the decision version a little bit
     if len(pl1) < len(pl2):
         pl1, pl2 = pl2, pl1
 
-    epsilons = sorted(critical_epsilons(pl1, pl2))
+    epsilons = list(_unique(sorted(_critical_epsilons(pl1, pl2))))
+    print(epsilons)
 
     assert frechet_distance_decision(pl1, pl2, epsilons[-1])
 
     low = 0
-    high = len(epsilons - 1)
+    high = len(epsilons) - 1
     while high > low + 1:
         current = (low + high) // 2
-        if frechet_distance_decision(pl1, pl2, epsilons[current]):
+        if _decision(pl1, pl2, epsilons[current]):
             high = current
         else:
             low = current

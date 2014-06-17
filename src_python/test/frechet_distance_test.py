@@ -18,6 +18,9 @@ test_data = [
     ([(0, 0), (10, 10), (10, -10), (0, 0)],
      [(0, 0), (10, -10), (10, 10), (0, 0)],
      10 * math.sqrt(2)),
+    ([(0, 0), (1, 1), (11, 1), (12, 2)],
+     [(1, 0), (11, 0), (1, 2), (11, 2)],
+     math.sqrt(5 * 5 + 1))
     ]
 
 def decision_test():
@@ -49,6 +52,13 @@ def pass_test():
 def distance_test():
     def test_func(pl1, pl2, epsilon):
         assert_almost_equal(F.frechet_distance(pl1, pl2), epsilon)
+
+    assert_almost_equal(F.frechet_distance([(0, 0), (10, 0), (20, 0)],
+                                           [(0, 0), (10, 0), (20, 0)]),
+                        0)
+    assert_almost_equal(F.frechet_distance([(0, 0), (20, 0)],
+                                           [(0, 0), (10, 0), (20, 0)]),
+                        0)
 
     for pl1, pl2, epsilon in test_data:
         yield (test_func, pl1, pl2, epsilon)
