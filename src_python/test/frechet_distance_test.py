@@ -24,11 +24,11 @@ test_data = [
     ]
 
 def decision_test():
-    def test_func(pl1, pl2, epsilon):
-        assert_false(F.frechet_distance_decision(pl1, pl2, epsilon - 1))
-        assert_true(F.frechet_distance_decision(pl1, pl2, epsilon * (1 + 1e-8))) # to prevent rounding errors
-        assert_true(F.frechet_distance_decision(pl1, pl2, epsilon + 1))
-        assert_true(F.frechet_distance_decision(pl1, pl2, epsilon + 1000))
+    def test_func(pl1, pl2, distance):
+        assert_false(F.frechet_distance_decision(pl1, pl2, distance - 1))
+        assert_true(F.frechet_distance_decision(pl1, pl2, distance))
+        assert_true(F.frechet_distance_decision(pl1, pl2, distance + 1))
+        assert_true(F.frechet_distance_decision(pl1, pl2, distance + 1000))
 
     assert_true(F.frechet_distance_decision([(0, 0), (10, 0), (20, 0)],
                                             [(0, 0), (10, 0), (20, 0)],
@@ -37,8 +37,8 @@ def decision_test():
                                             [(0, 0), (10, 0), (20, 0)],
                                             0))
 
-    for pl1, pl2, epsilon in test_data:
-        yield (test_func, pl1, pl2, epsilon)
+    for pl1, pl2, distance in test_data:
+        yield (test_func, pl1, pl2, distance)
 
 def pass_test():
     assert_equal(F._calc_pass(((0, 0), (10, 0)), (5, 0), 2), (0.3, 0.7))
@@ -50,8 +50,8 @@ def pass_test():
     assert_equal(F._calc_pass(((0, 0), (10, 0)), (5, 4), 5), (0.2, 0.8))
 
 def distance_test():
-    def test_func(pl1, pl2, epsilon):
-        assert_almost_equal(F.frechet_distance(pl1, pl2), epsilon)
+    def test_func(pl1, pl2, distance):
+        assert_almost_equal(F.frechet_distance(pl1, pl2), distance)
 
     assert_almost_equal(F.frechet_distance([(0, 0), (10, 0), (20, 0)],
                                            [(0, 0), (10, 0), (20, 0)]),
@@ -60,5 +60,5 @@ def distance_test():
                                            [(0, 0), (10, 0), (20, 0)]),
                         0)
 
-    for pl1, pl2, epsilon in test_data:
-        yield (test_func, pl1, pl2, epsilon)
+    for pl1, pl2, distance in test_data:
+        yield (test_func, pl1, pl2, distance)

@@ -4,7 +4,9 @@ import itertools
 
 # Based on http://www.cim.mcgill.ca/~stephane/cs507/Project.html
 # This implementation only calculate approximation of the Frechet distance, because
-# we don't consider all of the poosible critical values of epsilon (see todo note).
+# we don't consider all of the poosible critical values of distance (see todo note).
+
+epsilon = 1e-8
 
 def squared_points_distance(p1, p2):
     x1, y1 = p1
@@ -15,8 +17,8 @@ def squared_points_distance(p1, p2):
 
     return dx * dx + dy * dy
 
-def _calc_pass(l1, p, epsilon):
-    """Calculate distance along l1 where p is closer than epsilon."""
+def _calc_pass(l1, p, distance):
+    """Calculate distance along l1 where p is closer than distance."""
 
     dx = l1[1][0] - l1[0][0]
     dy = l1[1][1] - l1[0][1]
@@ -28,15 +30,19 @@ def _calc_pass(l1, p, epsilon):
 
     a = vx * dx + vy * dy
 
-    D = a * a - length_sq * ((vx * vx + vy * vy) - epsilon * epsilon)
-    if D < 0:
+    D = a * a - length_sq * ((vx * vx + vy * vy) - distance * distance)
+    if D < -epsilon:
         return (1, -1)
-    sqrtD = math.sqrt(D)
+
+    if D < 0:
+        sqrtD = 0
+    else:
+        sqrtD = math.sqrt(D)
 
     return (max((a - sqrtD) / length_sq , 0), min((a + sqrtD) / length_sq, 1))
 
-def _decision(pl1, pl2, epsilon):
-    """Decides if polylines pl1 and pl2 have Frechet distance lower or equal to epsilon.
+def _decision(pl1, pl2, distance):
+    """Decides if polylines pl1 and pl2 have Frechet distance lower or equal to distance.
 
     This is the internal version that actually does the work.
     Requires that the start and end points are close enough, but doesn't check this. """
@@ -69,7 +75,7 @@ def _decision(pl1, pl2, epsilon):
             #print("l[{i}, {j}] = {l}; b[{i}, {j}] = {b}".format(i = i, j = j, l = l[i, j], b = b[i, j]))
             jj = j + 1
 
-            pass_r = _calc_pass(l2, l1[1], epsilon)
+            pass_r = _calc_pass(l2, l1[1], distance)
             if b[i, j] <= 1:
                 # if the current block could be accessed from the bottom, it can be exited
                 # on the right anywhere
@@ -78,12 +84,12 @@ def _decision(pl1, pl2, epsilon):
                 # if it could be accessed only from the left, then find the bottommost
                 # possible right exit point
                 l[ii, j] = max(pass_r[0], l[i, j])
-            if l[ii, j] > pass_r[1]:
+            if l[ii, j] > pass_r[1] + epsilon:
                 # if the best exit point we could find is outside of the passable interval,
                 # mark the edge as impassable
                 l[ii, j] = 2
 
-            pass_t = _calc_pass(l1, l2[1], epsilon)
+            pass_t = _calc_pass(l1, l2[1], distance)
             if l[i, j] <= 1:
                 # if the current block could be accessed from the left, it can be exited
                 # on the top anywhere, and we do nothing
@@ -92,14 +98,14 @@ def _decision(pl1, pl2, epsilon):
                 # if it could be accessed only from the bottom, then find the leftmost
                 # possible top exit point
                 b[i, jj] = max(pass_t[0], b[i, j])
-            if b[i, jj] > pass_t[1]:
+            if b[i, jj] > pass_t[1] + epsilon:
                 # if the best exit point we could find is outside of the passable interval,
                 # mark the edge as impassable
                 b[i, jj] = 2
 
     return b[(n - 1) % 2, m - 1] <= 1 or l[(n - 1) % 2, (m - 1)] <= 1
 
-def _critical_epsilons_half(pl1, pl2):
+def _critical_distances_half(pl1, pl2):
     for l in zip(pl1[:-1], pl1[1:]):
         for i, p in enumerate(pl2[1:-1]):
             dx = l[1][0] - l[0][0]
@@ -109,53 +115,44 @@ def _critical_epsilons_half(pl1, pl2):
             # The simple case: Distance between each segment of pl1 and each point of pl2
             yield abs((dy * p[0] - dx * p[1] - l[0][0] * l[1][1] + l[1][0] * l[0][1]) / length)
 
-def _unique(iterable):
-    it = iter(iterable)
-    previous = next(it)
-    for x in it:
-        if x != previous:
-            yield previous
-            previous = x
-    yield previous
-
-def _critical_epsilons(pl1, pl2):
-    """ Return candidate values of epsilon for the actual Frechet distance"""
+def _critical_distances(pl1, pl2):
+    """ Return candidate values of distance for the actual Frechet distance"""
 
     yield math.sqrt(squared_points_distance(pl1[0], pl2[0]))
     yield math.sqrt(squared_points_distance(pl1[-1], pl2[-1]))
-    yield from _critical_epsilons_half(pl1, pl2)
-    yield from _critical_epsilons_half(pl2, pl1)
+    yield from _critical_distances_half(pl1, pl2)
+    yield from _critical_distances_half(pl2, pl1)
 
-def frechet_distance_decision(pl1, pl2, epsilon):
-    """Decides if polylines pl1 and pl2 have Frechet distance lower or equal to epsilon."""
+def frechet_distance_decision(pl1, pl2, distance):
+    """Decides if polylines pl1 and pl2 have Frechet distance lower or equal to distance."""
 
-    if squared_points_distance(pl1[0], pl2[0]) > epsilon * epsilon:
+    if squared_points_distance(pl1[0], pl2[0]) > distance * distance:
         return False
-    if squared_points_distance(pl1[-1], pl2[-1]) > epsilon * epsilon:
+    if squared_points_distance(pl1[-1], pl2[-1]) > distance * distance:
         return False
 
     # to decrease memory requirements of the decision version a little bit
     if len(pl1) < len(pl2):
         pl1, pl2 = pl2, pl1
 
-    return _decision(pl1, pl2, epsilon)
+    return _decision(pl1, pl2, distance)
 
 def frechet_distance(pl1, pl2):
     if len(pl1) < len(pl2):
         pl1, pl2 = pl2, pl1
 
-    epsilons = list(_unique(sorted(_critical_epsilons(pl1, pl2))))
-    print(epsilons)
+    distances = sorted(_critical_distances(pl1, pl2))
+    print(distances)
 
-    assert frechet_distance_decision(pl1, pl2, epsilons[-1])
+    assert frechet_distance_decision(pl1, pl2, distances[-1])
 
     low = 0
-    high = len(epsilons) - 1
+    high = len(distances) - 1
     while high > low + 1:
         current = (low + high) // 2
-        if _decision(pl1, pl2, epsilons[current]):
+        if _decision(pl1, pl2, distances[current]):
             high = current
         else:
             low = current
 
-    return epsilons[high]
+    return distances[high]
