@@ -44,6 +44,7 @@ class DifferentialDriveModel:
         return sample
 
     def update_sample_iter(self, sample, ticks):
+        yield sample
         for left_ticks, right_ticks in ticks:
             sample = self.update_sample(sample, left_ticks, right_ticks);
             yield sample
