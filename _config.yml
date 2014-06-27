@@ -1,0 +1,7 @@
+baseurl: /robomower2
+defaults:
+    -
+        scope:
+            path: ""
+        values:
+            layout: default
