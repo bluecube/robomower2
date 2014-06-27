@@ -1,5 +1,6 @@
 ---
 title: Robomower2
+layout: default
 ---
 
 Once upon a time I decided that building a robotic lawnmower is not a hard thing to do.
@@ -20,4 +21,4 @@ be something incorrect and missing.
 The robot's source code, schematics and all other stuff is [hosted on github](https://github.com/bluecube/robomower2),
 my mail address is blue dot cube at seznam dot cz.
 
-![How it looks now]({{ site.baseurl }}img/2014-02/overview.jpg)
+![How it looks now]({{ site.baseurl }}/img/2014-02/overview.jpg)
