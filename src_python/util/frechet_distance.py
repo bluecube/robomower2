@@ -6,7 +6,7 @@ import itertools
 
 epsilon = 1e-7
 
-def squared_points_distance(p1, p2):
+def _squared_points_distance(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
 
@@ -39,7 +39,7 @@ def _calc_pass(l1, p, distance):
 
     return (max((a - sqrtD) / length_sq , 0), min((a + sqrtD) / length_sq, 1))
 
-def _decision(pl1, pl2, distance):
+def _decision(pl1, pl2, b, l, distance):
     """Decides if polylines pl1 and pl2 have Frechet distance lower or equal to distance.
 
     This is the internal version that actually does the work.
@@ -49,11 +49,11 @@ def _decision(pl1, pl2, distance):
     n = len(pl1) - 1
     m = len(pl2) - 1
 
-    b = numpy.empty((2, m + 1))
+    assert b.shape == (2, m + 1)
         # Lowest x coordinate to get into the field i % 2, j from the bottom
         # Value 2 marks that the edge is not passable
 
-    l = numpy.empty((2, m + 1))
+    assert l.shape == (2, m + 1)
         # Lowest y coordinate to get into the field i % 2, j from the left
         # Value 2 marks that the edge is not passable
 
@@ -103,7 +103,7 @@ def _decision(pl1, pl2, distance):
 
     return b[(n - 1) % 2, m - 1] <= 1 or l[(n - 1) % 2, (m - 1)] <= 1
 
-def _critical_distances_half(pl1, pl2):
+def _critical_distances_half(pl1, pl2, out, offset):
     for l in zip(pl1[:-1], pl1[1:]):
         for i, p in enumerate(pl2[1:-1]):
             dx = l[1][0] - l[0][0]
@@ -112,7 +112,8 @@ def _critical_distances_half(pl1, pl2):
 
             # The simple case: Distance between each segment of pl1 and each point of pl2
             # This is the distance at which a new passage between two neighbor cells opens
-            yield abs(dy * p[0] - dx * p[1] - l[0][0] * l[1][1] + l[1][0] * l[0][1]) / length
+            out[offset] = abs(dy * p[0] - dx * p[1] - l[0][0] * l[1][1] + l[1][0] * l[0][1]) / length
+            offset += 1
 
             for q in pl2[2 + i:-1]:
                 # The complicated case.
@@ -135,44 +136,58 @@ def _critical_distances_half(pl1, pl2):
 
                 if denominator != 0:
                     t = 0.5 * (vqx * vqx + vqy * vqy - vpx * vpx - vpy * vpy) / denominator
-                    yield math.hypot(vpx + t * dx, vpy + t * dy)
+                    out[offset] = math.hypot(vpx + t * dx, vpy + t * dy)
+                    offset += 1
+    return offset
 
 
-def _critical_distances(pl1, pl2):
+def _critical_distances(pl1, pl2, out):
     """ Return candidate values of distance for the actual Frechet distance"""
 
-    yield math.sqrt(squared_points_distance(pl1[0], pl2[0]))
-    yield math.sqrt(squared_points_distance(pl1[-1], pl2[-1]))
-    yield from _critical_distances_half(pl1, pl2)
-    yield from _critical_distances_half(pl2, pl1)
+    out[0] = math.sqrt(_squared_points_distance(pl1[0], pl2[0]))
+    out[1] = math.sqrt(_squared_points_distance(pl1[-1], pl2[-1]))
+    offset = _critical_distances_half(pl1, pl2, out, 2)
+    offset = _critical_distances_half(pl2, pl1, out, offset)
+    return offset
 
 def frechet_distance_decision(pl1, pl2, distance):
     """Decides if polylines pl1 and pl2 have Frechet distance lower or equal to distance."""
 
-    if squared_points_distance(pl1[0], pl2[0]) > distance * distance:
+    if _squared_points_distance(pl1[0], pl2[0]) > distance * distance:
         return False
-    if squared_points_distance(pl1[-1], pl2[-1]) > distance * distance:
+    if _squared_points_distance(pl1[-1], pl2[-1]) > distance * distance:
         return False
 
-    # to decrease memory requirements of the decision version a little bit
     if len(pl1) < len(pl2):
         pl1, pl2 = pl2, pl1
+    pl1 = numpy.asanyarray(pl1, dtype=numpy.double)
+    pl2 = numpy.asanyarray(pl2, dtype=numpy.double)
+    b = numpy.empty((2, len(pl2)))
+    l = numpy.empty((2, len(pl2)))
 
-    return _decision(pl1, pl2, distance)
+    return _decision(pl1, pl2, b, l, distance)
 
 def frechet_distance(pl1, pl2):
     if len(pl1) < len(pl2):
         pl1, pl2 = pl2, pl1
+    pl1 = numpy.asanyarray(pl1, dtype=numpy.double)
+    pl2 = numpy.asanyarray(pl2, dtype=numpy.double)
+    b = numpy.empty((2, len(pl2)))
+    l = numpy.empty((2, len(pl2)))
 
-    distances = sorted(_critical_distances(pl1, pl2))
+    distances = numpy.empty(2 + (len(pl1) - 1) * (len(pl2) - 1) * ((len(pl1) - 2) + (len(pl2) - 2)) // 2,
+                            dtype=numpy.double)
+    distances_count = _critical_distances(pl1, pl2, distances)
+    distances.resize(distances_count, refcheck=False)
+    distances.sort()
 
-    assert frechet_distance_decision(pl1, pl2, distances[-1])
+    assert _decision(pl1, pl2, b, l, distances[-1])
 
     low = 0
     high = len(distances) - 1
     while high > low + 1:
         current = (low + high) // 2
-        if _decision(pl1, pl2, distances[current]):
+        if _decision(pl1, pl2, b, l, distances[current]):
             high = current
         else:
             low = current

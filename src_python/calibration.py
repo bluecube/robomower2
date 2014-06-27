@@ -36,10 +36,11 @@ def optimize_dimensions(ticks, ground_truth, left_resolution, right_resolution, 
                                                           right_resolution,
                                                           0, 0,
                                                           wheel_base)
+        path = [(sample.x, sample.y)
+                for sample in
+                drive.update_sample_iter(initialSample, ticks)]
 
-        dist = util.frechet_distance.frechet_distance(ground_truth, [(sample.x, sample.y)
-                                                                     for sample in
-                                                                     drive.update_sample_iter(initialSample, ticks)])
+        dist = util.frechet_distance.frechet_distance(path, ground_truth)
         print("=>", dist)
         return dist
 
