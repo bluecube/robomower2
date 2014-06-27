@@ -1,12 +1,11 @@
 (Reject packets without putting them to buffer on AVR robonet.)
 
-Robotem rovně: Do soutěže je nutná elektronická registrace a to nejpozději do 20. dubna 2014
-
 Overall (roughly in order):
     - Finalize driving (HW only) - DONE
     - Manual mode driving (SW) - DONE
+    - Rebuild the burned out drive board
     - Raspbery PI
-    - Measure error model of odometry + calibration
+    - Measure error model of odometry + calibration ?????
     - Localization
     - Line following + corrections
     - GPS
