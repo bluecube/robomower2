@@ -3,8 +3,6 @@ import numpy
 import itertools
 
 # Based on http://www.cim.mcgill.ca/~stephane/cs507/Project.html
-# This implementation only calculate approximation of the Frechet distance, because
-# we don't consider all of the poosible critical values of distance (see todo note).
 
 epsilon = 1e-7
 
