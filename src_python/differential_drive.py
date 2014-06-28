@@ -17,8 +17,7 @@ class DifferentialDriveModel:
         self.wheel_base = wheel_base
 
     def update_sample(self, sample, left_ticks, right_ticks):
-        """ Returns a new sample updated according to measured movement.
-        TODO: Sampling from the drive probability distributions. """
+        """ Returns a new sample updated according to measured movement."""
 
         left_distance = left_ticks * self.left_resolution * random.gauss(1, self.left_sigma)
         right_distance = right_ticks * self.right_resolution * random.gauss(1, self.right_sigma)
