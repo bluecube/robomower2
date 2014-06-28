@@ -1,6 +1,7 @@
 import math
 import copy
 import random
+import logging
 
 class DifferentialDriveModel:
     """ Model for arbitrary differential drive.
@@ -61,6 +62,8 @@ class DifferentialDriveModel:
 class DifferentialDrive:
     """ Left is positive """
     def __init__(self, left_proxy, right_proxy, config):
+        self._logger = logging.getLogger(__name__)
+
         self.left_proxy = left_proxy
         self.right_proxy = right_proxy
         assert(left_proxy.PID_FREQUENCY == right_proxy.PID_FREQUENCY)
@@ -73,6 +76,7 @@ class DifferentialDrive:
         self.set_pid(**config["PID"])
 
     def set_pid(self, kP, kI, kD):
+        self._logger.info("Setting PID params to %f %f %f", kP, kI, kD)
         self.left_proxy.params(kP, kI, kD)
         self.right_proxy.params(kP, kI, kD)
 
