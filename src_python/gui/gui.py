@@ -8,8 +8,6 @@ from . import controller
 pygame.init()
 
 class Gui:
-    logger = logging.getLogger(__name__)
-
     grid_cell_size = 150
     grid_columns = 2
     grid_width = grid_columns * grid_cell_size
@@ -18,6 +16,8 @@ class Gui:
         self.screen = pygame.display.set_mode(size, pygame.RESIZABLE)
 
     def __init__(self, robot_config):
+        self._logger = logging.getLogger(__name__)
+
         self._set_mode()
 
         lim = robot_config["limits"]
@@ -37,17 +37,21 @@ class Gui:
         self._i_slider = widgets.Slider("kI", 0, 128, "%.1f")
         self._d_slider = widgets.Slider("kD", 0, 128, "%.1f")
         self._pid_grid = widgets.Grid(3, [self._p_slider, self._i_slider, self._d_slider], 10)
+        self._rpm_r = widgets.Dial("R", 0, 12, "%.0f", "%.1f", "kRPM")
+        self._rpm_l = widgets.Dial("L", 0, 12, "%.0f", "%.1f", "kRPM")
+        self._rpm_grid = widgets.Grid(2, [self._rpm_l, self._rpm_r], 5)
 
         self._grid = widgets.Grid(self.grid_columns,
-                                  [self._velocity, self._load, self._drive, self._pid_grid],
-                                  10)
+                                  [self._velocity, self._drive, self._load, self._pid_grid,
+                                   self._rpm_grid],
+                                  5)
         self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
 
         self._log_widget = widgets.LogWidget(True)
         self._log_widget.setFormatter(logging.Formatter("%(asctime)s %(name)s: %(message)s", "%H:%M:%S"))
         logging.getLogger().addHandler(self._log_widget)
 
-        self.logger.info("GUI ready")
+        self._logger.info("GUI ready")
 
     def draw(self):
         w, h = self.screen.get_size()
@@ -99,6 +103,22 @@ class Gui:
     @velocity.setter
     def velocity(self, value):
         self._velocity.value = abs(value)
+
+    @property
+    def rpm_l(self):
+        raise AttributeError("Write only!")
+
+    @rpm_l.setter
+    def rpm_l(self, value):
+        self._rpm_l.value = value
+
+    @property
+    def rpm_r(self):
+        raise AttributeError("Write only!")
+
+    @rpm_r.setter
+    def rpm_r(self, value):
+        self._rpm_r.value = value
 
     @property
     def samples(self):
