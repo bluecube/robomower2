@@ -185,10 +185,10 @@ class Grid:
 
         iterator = iter(self.items)
         try:
-            for i in range(self.columns):
-                xx = x + item_width * i + self.padding * i
-                for j in range(self.rows):
-                    yy = y + item_height * j + self.padding * j
+            for j in range(self.rows):
+                yy = y + item_height * j + self.padding * j
+                for i in range(self.columns):
+                    xx = x + item_width * i + self.padding * i
                     #pygame.draw.rect(surface, config.color1_50, pygame.Rect(xx, yy, item_width, item_height), 1)
                     next(iterator).draw(surface, xx, yy, item_width, item_height, mouse)
         except StopIteration:
