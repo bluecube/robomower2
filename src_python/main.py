@@ -74,7 +74,7 @@ try:
                           drive.left_command, drive.right_command,
                           drive.left_ticks, drive.right_ticks)
 
-        #gui.velocity = drive.forward_distance / delta_t
+        gui.velocity = drive.forward_distance() / delta_t
         gui.controller = controller
         gui.load = main_loop_load
         gui.update()

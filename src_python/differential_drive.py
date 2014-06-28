@@ -43,6 +43,15 @@ class DifferentialDriveModel:
 
         return sample
 
+    def forward_distance(self, left_ticks, right_ticks):
+        """ Return ideal forward distance travelled if wheels measured given
+        numbers of ticks"""
+
+        left_distance = left_ticks * self.left_resolution
+        right_distance = right_ticks * self.right_resolution
+
+        return (left_distance + right_distance) * 0.5
+
     def update_sample_iter(self, sample, ticks):
         yield sample
         for left_ticks, right_ticks in ticks:
@@ -74,6 +83,9 @@ class DifferentialDrive:
                                             config["right_sigma"],
                                             config["wheel_base"])
         self.set_pid(**config["PID"])
+
+    def forward_distance(self):
+        return self.model.forward_distance(self.left_ticks, self.right_ticks)
 
     def set_pid(self, kP, kI, kD):
         self._logger.info("Setting PID params to %f %f %f", kP, kI, kD)
