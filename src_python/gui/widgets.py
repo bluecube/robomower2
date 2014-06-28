@@ -1,5 +1,6 @@
 import math
 import logging
+import collections
 import pygame.draw
 from . import config
 
@@ -242,7 +243,7 @@ class Slider:
 class LogWidget(logging.Handler):
     def __init__(self, bottom_to_top):
         super().__init__()
-        self._lines = []
+        self._lines = collections.deque()
         self._bottom_to_top = bottom_to_top
 
     def emit(self, record):

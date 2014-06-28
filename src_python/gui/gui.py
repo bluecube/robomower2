@@ -49,8 +49,6 @@ class Gui:
 
         self.logger.info("GUI ready")
 
-        self._mouse = None
-
     def draw(self):
         w, h = self.screen.get_size()
 
@@ -71,6 +69,7 @@ class Gui:
                        self._mouse)
 
     def update(self):
+        self._mouse = None
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.finished = True
