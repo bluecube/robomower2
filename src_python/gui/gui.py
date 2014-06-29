@@ -1,5 +1,6 @@
 import pygame
 import logging
+import math
 from . import config
 from . import widgets
 from . import mapwidget
@@ -27,7 +28,7 @@ class Gui:
 
         self.controller = controller.GuiController(self);
 
-        self._velocity = widgets.Dial("velocity", 0, lim["velocity"], "%.1f", "%.2f", "m/s")
+        self._velocity = widgets.Dial("velocity", 0, math.ceil(lim["velocity"] * 12) / 10, "%.1f", "%.2f", "m/s")
         self._load = widgets.Dial("CPU load", 0, 100, "%d", "%d", "%")
         self._drive = widgets.Xy("",
                                  -lim["angular_velocity"],
