@@ -23,10 +23,10 @@
     },
 
     "limits": {
-        "velocity": 1.1,
-        "acceleration": 0.5,
-        "angular_velocity": 1,
-        "angular_acceleration": 1
+        "velocity": 0.8,
+        "acceleration": 0.3,
+        "angular_velocity": 0.8,
+        "angular_acceleration": 0.5
     },
 
     "logging" : {
