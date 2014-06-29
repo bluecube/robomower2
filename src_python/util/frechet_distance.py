@@ -4,7 +4,7 @@ import itertools
 
 # Based on http://www.cim.mcgill.ca/~stephane/cs507/Project.html
 
-epsilon = 1e-7
+epsilon = 1e-9
 
 def _squared_points_distance(p1, p2):
     x1, y1 = p1
@@ -105,11 +105,11 @@ def _decision(pl1, pl2, b, l, distance):
 
 def _critical_distances_half(pl1, pl2, out, offset):
     for l in zip(pl1[:-1], pl1[1:]):
-        for i, p in enumerate(pl2[1:-1]):
-            dx = l[1][0] - l[0][0]
-            dy = l[1][1] - l[0][1]
-            length = math.hypot(dx, dy)
+        dx = l[1][0] - l[0][0]
+        dy = l[1][1] - l[0][1]
+        length = math.hypot(dx, dy)
 
+        for i, p in enumerate(pl2[1:-1]):
             # The simple case: Distance between each segment of pl1 and each point of pl2
             # This is the distance at which a new passage between two neighbor cells opens
             out[offset] = abs(dy * p[0] - dx * p[1] - l[0][0] * l[1][1] + l[1][0] * l[0][1]) / length
