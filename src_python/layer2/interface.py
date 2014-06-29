@@ -50,7 +50,7 @@ class Type:
         return self.unsigned == other.unsigned and self.size == other.size and self.multiplier == other.multiplier
 
     def pack(self, value):
-        return struct.pack(self._struct_arg, int(value * self.multiplier))
+        return struct.pack(self._struct_arg, round(value * self.multiplier))
 
     def unpack(self, data):
         value = struct.unpack(self._struct_arg, data)[0]
