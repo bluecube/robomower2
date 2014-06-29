@@ -8,21 +8,9 @@
 <body>
 
 <header>
-    <h1>{{ page.title }}</h1>
+<h1>{{ page.title }}</h1>
 
-    <nav>
-        <ul>
-            <li><a href="{{ site.baseurl }}/index.html">Index</a></li>
-            <li>Mechanical Design</li>
-            <li>Motor Control</li>
-            <li>Software
-                <ul>
-                    <li>Internal Communication</li>
-                    <li>Localization</li>
-                    <li>Top Level</li>
-                </ul>
-            </li>
-    </nav>
+{% include main_nav.html %}
 </header>
 
 {{ content }}
