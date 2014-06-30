@@ -241,7 +241,7 @@ class Slider:
         pygame.draw.rect(surface, config.color1, pygame.Rect(x, y, w, rect_height), 1)
 
 class LogWidget(logging.Handler):
-    def __init__(self, bottom_to_top):
+    def __init__(self, bottom_to_top = False):
         super().__init__()
         self._lines = collections.deque()
         self._bottom_to_top = bottom_to_top
@@ -249,7 +249,7 @@ class LogWidget(logging.Handler):
     def emit(self, record):
         self.add_line(self.format(record), record.levelno >= logging.WARNING)
 
-    def add_line(self, string, red):
+    def add_line(self, string, red = False):
         self._lines.append((string, red))
 
     def draw(self, surface, x, y, w, h, mouse):
