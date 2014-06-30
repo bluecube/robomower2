@@ -40,3 +40,16 @@ def squared_hausdorff_distance(pl1, pl2):
 
 def hausdorff_distance(pl1, pl2):
     return math.sqrt(squared_hausdorff_distance(pl1, pl2))
+
+def average_distance(pl1, pl2):
+    """ Something like hausdorff distance between two polylines,
+    only instead of maximal error we use average error. """
+    avg = 0
+    t = 1
+    for p in pl1:
+        avg += (math.sqrt(_point_to_polyline(p, pl2)) - avg) / t
+        t += 1
+    for p in pl2:
+        avg += (math.sqrt(_point_to_polyline(p, pl1)) - avg) / t
+        t += 1
+    return avg
