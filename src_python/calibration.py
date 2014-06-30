@@ -11,7 +11,7 @@ import datalogger
 import util.frechet_distance
 
 def loadRecording(path):
-    return [x[2:4] for x in datalogger.load(path) if x[2] != 0 or x[3] != 0]
+    return [x[3:5] for x in datalogger.load(path) if x[3] != 0 or x[4] != 0]
 
 def optimize_dimensions(ticks, ground_truth, left_resolution, right_resolution, wheel_base, **kwargs):
     """Find estimate of wheel distances per tick and wheel base dimensions.
