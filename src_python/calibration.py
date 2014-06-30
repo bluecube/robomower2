@@ -12,7 +12,7 @@ import gui.widgets
 import differential_drive
 import datalogger
 
-import util.frechet_distance
+import util.hausdorff_distance
 
 class CalibrationGui:
     pygame.init()
@@ -91,7 +91,7 @@ def optimize_dimensions(ticks, ground_truth, left_resolution, right_resolution, 
                 drive.update_sample_iter(initialSample, ticks)]
 
 
-        dist = util.frechet_distance.frechet_distance(path, ground_truth)
+        dist = util.hausdorff_distance.hausdorff_distance(path, ground_truth)
         calibrationGui.update(state_vector, dist, path)
         return dist
 
