@@ -22,6 +22,7 @@ class CalibrationGui:
         self._logwidget = gui.widgets.LogWidget(False)
         self._ground_truth = ground_truth
         self._prev_path = []
+        self._step = 0
 
     def _draw_path(self, path, color):
         if not len(path):
@@ -51,7 +52,8 @@ class CalibrationGui:
             elif event.type == pygame.VIDEORESIZE:
                 self._screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
         self._screen.fill(gui.config.bgcolor)
-        self._logwidget.add_line(", ".join("{:.4e}".format(param) for param in state_vector) + " => {:.4e}".format(dist))
+        self._logwidget.add_line(", ".join("{:.3e}".format(param) for param in state_vector))
+        self._logwidget.add_line("   => {:.4e}".format(dist))
         w, h = self._screen.get_size()
         self._logwidget.draw(self._screen, 0, 0, w, h, None)
         self._draw_path(self._ground_truth, gui.config.color2)
@@ -59,6 +61,9 @@ class CalibrationGui:
         self._draw_path(path, gui.config.color1)
         pygame.display.flip()
         self._prev_path = path
+
+        #pygame.image.save(self._screen, "/tmp/calibration{:04d}.bmp".format(self._step))
+        self._step += 1
 
 
 def loadRecording(path):
