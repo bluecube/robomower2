@@ -47,7 +47,7 @@ try:
 
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
 
-    #gui._map.lines = calibration.ground_truth
+    #gui._map.lines = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]
