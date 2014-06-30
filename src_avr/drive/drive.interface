@@ -4,7 +4,7 @@ robonet_header = robonet/robonet.h
 include = broadcast.interface
 
 [constants]
-PID_FREQUENCY = 50
+PID_FREQUENCY = 100
 
 [request:update]
 speed = int8
