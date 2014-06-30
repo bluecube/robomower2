@@ -4,7 +4,7 @@ layout: default
 ---
 
 Once upon a time I decided that building a robotic lawnmower is not a hard thing to do.
-Now, several years later, it is still not even rolling under its own power, but
+Now, several years later, it is barely rolling under its own power, but
 I still keep the vision of the magnificient robot going through the grass, at all times
 perfectly aware of its own position.
 
