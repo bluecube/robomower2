@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
+import sys
 import math
-import functools
 import scipy.optimize
 import numpy
 import pygame
@@ -47,8 +47,7 @@ class CalibrationGui:
     def update(self, state_vector, dist, path):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.finished = True
-                return
+                sys.exit(0)
             elif event.type == pygame.VIDEORESIZE:
                 self._screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
         self._screen.fill(gui.config.bgcolor)
@@ -76,16 +75,12 @@ def optimize_dimensions(ticks, ground_truth, left_resolution, right_resolution, 
 
     def objective(state_vector):
         """Returns sum of squared distances from the ground truth over the whole path."""
-        x, y, heading, left_resolution, right_resolution, wheel_base = state_vector
-
-        avg_tick_size = (left_resolution + right_resolution) / 2
-
         class Sample:
             pass
+
         initialSample = Sample()
-        initialSample.x = x
-        initialSample.y = y
-        initialSample.heading = heading
+        initialSample.x, initialSample.y, initialSample.heading, \
+            left_resolution, right_resolution, wheel_base = state_vector
 
         drive = differential_drive.DifferentialDriveModel(left_resolution,
                                                           right_resolution,
