@@ -101,12 +101,8 @@ def optimize_dimensions(ticks, ground_truth, left_resolution, right_resolution, 
     calibrationGui.update(initial_state, -1, [])
 
     result = scipy.optimize.minimize(objective, initial_state,
-                                     options = {"disp": True, "maxiter": 1000},
-                                     method =  "BFGS")#,
-                                    # bounds = [(-1, 1), (-1, 1), (-2, 2),
-                                    #           (0.5 * left_resolution, 1.5 * left_resolution),
-                                    #           (0.5 * right_resolution, 1.5 * right_resolution),
-                                    #           (0.5 * wheel_base, 1.5 * wheel_base)])
+                                     options = {"maxiter": 1000, "disp": True},
+                                     method =  "nelder-mead")
     return result['x']
 
 #def optimize_stdevs(ticks, ground_truth, x0, y0, heading0,
