@@ -9,3 +9,5 @@ b = uint16
 [response:test]
 c = uint8
 d = uint16
+
+# vim: filetype=dosini

@@ -19,3 +19,5 @@ kD = int16(4)
 
 [response:params]
 # No data
+
+# vim: filetype=dosini
