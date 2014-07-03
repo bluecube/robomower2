@@ -38,7 +38,7 @@ int8_t requestedSpeed; // Units are ticks per SERVO_PERIOD
 int8_t requestedDirection;
 int8_t currentDirection;
 uint8_t needStopCycles;
-uint8_t lastTicks;
+uint8_t lastTicks[DERIVATIVE_SMOOTHING + 1];
 int16_t kP, kI, kD;
 int16_t integratorState;
 uint8_t safetyCounter;
@@ -190,7 +190,8 @@ void stop()
 {
     servo_set(0);
     integratorState = 0;
-    lastTicks = 0;
+    for (int8_t i = 0; i <= DERIVATIVE_SMOOTHING; ++i)
+        lastTicks[i] = 0;
 }
 
 ISR(TIMER0_OVF_vect)
@@ -230,15 +231,17 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
     }
 
     int16_t error = requestedSpeed - ticks;
-    int16_t difference = lastTicks - ticks;
-    lastTicks = ticks;
+    int16_t difference = lastTicks[0] - ticks;
+    for (int8_t i = 0; i < DERIVATIVE_SMOOTHING; ++i)
+        lastTicks[i] = lastTicks[i + 1];
+    lastTicks[DERIVATIVE_SMOOTHING] = ticks;
 
     integratorState = clamp(integratorState + error,
                             -SERVO_RANGE_TICKS, SERVO_RANGE_TICKS);
-    int16_t tmpOutput = clamp((error * kP +
-                              integratorState * kI +
-                              difference * kD) / PID_MULTIPLIER,
-                              0, SERVO_RANGE_TICKS);
+    int16_t tmpOutput = (error * kP +
+                        integratorState * kI +
+                        (difference * kD) / (DERIVATIVE_SMOOTHING + 1);
+    tmpOutput = clamp(tmpOutput / PID_MULTIPLIER, 0, SERVO_RANGE_TICKS);
     if (currentDirection < 0)
         tmpOutput = -tmpOutput;
 
