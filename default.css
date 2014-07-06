@@ -1,3 +1,8 @@
 img {
-    max-width: 100%;
+    max-width: 95%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 1em;
+    margin-bottom: 1em;
 }
