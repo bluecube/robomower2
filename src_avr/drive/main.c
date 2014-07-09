@@ -238,7 +238,7 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 
     integratorState = clamp(integratorState + error,
                             -SERVO_RANGE_TICKS, SERVO_RANGE_TICKS);
-    int16_t tmpOutput = (error * kP +
+    int16_t tmpOutput = error * kP +
                         integratorState * kI +
                         (difference * kD) / (DERIVATIVE_SMOOTHING + 1);
     tmpOutput = clamp(tmpOutput / PID_MULTIPLIER, 0, SERVO_RANGE_TICKS);
