@@ -53,36 +53,46 @@ int16_t clamp(int16_t val, int16_t min, int16_t max)
 }
 
 /** Atomically read both lower and upper (extended by software) part of the encoder
- * tick counter and return the number of ticks since the last call.
+ * tick counter and the sensor pin value and return the number of ticks since the last call.
  * Parameter state stores the state of the tick counter that corresponds to the value returned.
  *
- * This function assumes that it finishes faster than is the period between encoder ticks
- * (at most one encoder tick may happen inside this function) and that it is executed with
- * interrupts enabled (because the counter high word is updated in an interrupt).
- * If these conditions are not met, then atomicity is lost and the low and high
- * bytes of the value might be desynchronized. */
-static uint16_t latch_encoder_ticks16(uint16_t* state)
+ * Here we use a (kind of) dirty trick to count both rising and falling edges of the
+ * sensor signal while only using the counter that can count only falling edges.
+ * We treat the each count from the counter as 2 ticks and fill the lower bit from
+ * the current state of the sensor pin.
+ *
+ * This function assumes that it finishes faster than is the period between sensor
+ * state changes (at most one change may happen inside this function) and that it
+ * is executed with interrupts enabled (because the counter high word is updated
+ * in an interrupt). If these conditions are not met, then atomicity is lost and
+ * the low and high bytes of the value might be desynchronized. */
+static uint16_t latch_encoder_ticks16(uint16_t* restrict state)
 {
+    uint8_t bit = PIND; ///< The low bit inside the whole pin register
     union byteaccess newState;
-
     newState.u8[0] = TCNT0;
     newState.u8[1] = ticksHigh;
 
-    if (newState.u8[0] > TCNT0)
+    if ((~PIND | bit) & _BV(PD4)) // the old bit at PD4 was true and the new one is false
     {
-        // there has been a timer overflow at timer 0
-        // and it might have occured between reading TCNT0 and reading ticksHigh
-        // we need to do it all over again.
+        // The sensor value has changed and the change might have occured between
+        // reading the three parts. We need to do it all over again.
         // The same problem will not repeat, because this function should execute
         // faster than a period between input ticks
         //
-        // If there was only a single tick without overflow, we ignore it
+        // If there was only a single change without counter tick, we ignore it
         // and declare that the read happened before it (which is correct behavior).
+        bit = PIND;
         newState.u8[0] = TCNT0;
         newState.u8[1] = ticksHigh;
     }
 
-    // Now everything is safe in newState
+    // Now everything is safe in bit and newState
+
+    // Shift the newState up to fit the extra bit in
+    newState.u16 <<= 1;
+    if (bit & _BV(PD4))
+        newState.u8[0] |= 1;
 
     uint16_t oldState = *state;
     *state = newState.u16;
@@ -98,11 +108,23 @@ static uint16_t latch_encoder_ticks16(uint16_t* state)
  * Parameter state stores the state of the tick counter that corresponds to the value returned.
  *
  * Works almost exactly like latch_encoder_ticks16, but trades maximal number of encoder
- * ticks between state updates for speed and code size (both should be inlined). */
+ * ticks between state updates for speed and code size (both should be inlined).
+ *
+ * @see latch_encoder_ticks16() and the comments inside. */
 static uint8_t latch_encoder_ticks8(uint8_t* restrict state)
 {
+    uint8_t bit = PIND;
     uint8_t newState = TCNT0;
-    // Reading 8bit variables is atomic, so there is no trickery involved here
+
+    if ((~PIND | bit) & _BV(PD4))
+    {
+        bit = PIND;
+        newState = TCNT0;
+    }
+
+    newState <<= 1;
+    if (bit & _BV(PD4))
+        newState |= 1;
 
     uint8_t oldState = *state;
     *state = newState;
@@ -116,7 +138,7 @@ static uint8_t latch_encoder_ticks8(uint8_t* restrict state)
 int main()
 {
     // Timer0 (counting encoder pulses)
-    TCCR0 |= _BV(CS02) | _BV(CS01) | _BV(CS00); // external clock source for TCNT0, rising edge
+    TCCR0 |= _BV(CS02) | _BV(CS01); // external clock source for TCNT0, falling edge
     TIMSK |= _BV(TOIE0) | // Enable overflow interrupt on TCNT0
              _BV(TOIE1); // Enable overflow interrupt on TCNT1 (used by the servo library)
 
