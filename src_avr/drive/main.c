@@ -68,12 +68,14 @@ int16_t clamp(int16_t val, int16_t min, int16_t max)
  * the low and high bytes of the value might be desynchronized. */
 static uint16_t latch_encoder_ticks16(uint16_t* restrict state)
 {
-    uint8_t bit = PIND; ///< The low bit inside the whole pin register
+    uint8_t pindCopy = PIND;
     union byteaccess newState;
     newState.u8[0] = TCNT0;
     newState.u8[1] = ticksHigh;
 
-    if ((~PIND | bit) & _BV(PD4)) // the old bit at PD4 was true and the new one is false
+    uint8_t pindCopy2 = PIND; // This is the point that decides if there was a change.
+
+    if ((pindCopy & ~pindCopy2) & _BV(PD4)) // the old bit at PD4 was true and the new one is false
     {
         // The sensor value has changed and the change might have occured between
         // reading the three parts. We need to do it all over again.
@@ -82,16 +84,16 @@ static uint16_t latch_encoder_ticks16(uint16_t* restrict state)
         //
         // If there was only a single change without counter tick, we ignore it
         // and declare that the read happened before it (which is correct behavior).
-        bit = PIND;
+        pindCopy = pindCopy2;;
         newState.u8[0] = TCNT0;
         newState.u8[1] = ticksHigh;
     }
 
-    // Now everything is safe in bit and newState
+    // Now everything that could change is safe in pindCopy and newState
 
     // Shift the newState up to fit the extra bit in
     newState.u16 <<= 1;
-    if (bit & _BV(PD4))
+    if (pindCopy & _BV(PD4))
         newState.u8[0] |= 1;
 
     uint16_t oldState = *state;
@@ -113,17 +115,19 @@ static uint16_t latch_encoder_ticks16(uint16_t* restrict state)
  * @see latch_encoder_ticks16() and the comments inside. */
 static uint8_t latch_encoder_ticks8(uint8_t* restrict state)
 {
-    uint8_t bit = PIND;
+    uint8_t pindCopy = PIND;
     uint8_t newState = TCNT0;
 
-    if ((~PIND | bit) & _BV(PD4))
+    uint8_t pindCopy2 = PIND;
+
+    if ((pindCopy & ~pindCopy2) & _BV(PD4))
     {
-        bit = PIND;
+        pindCopy = pindCopy2;
         newState = TCNT0;
     }
 
     newState <<= 1;
-    if (bit & _BV(PD4))
+    if (pindCopy & _BV(PD4))
         newState |= 1;
 
     uint8_t oldState = *state;
