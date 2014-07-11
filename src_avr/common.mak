@@ -33,6 +33,7 @@ CFLAGS+=-mmcu=$(MCU)
 CFLAGS+=-Wall -Wextra
 CFLAGS+=-frename-registers -fweb -ftracer
 CFLAGS+=-O3 -pipe -std=c99 -g
+CFLAGS+=-mint8
 
 MAKEFILE_PATH:=$(dir $(lastword $(MAKEFILE_LIST)))
 LAYER2_SCRIPT:=$(MAKEFILE_PATH)/../src_python/layer2/generator.py
