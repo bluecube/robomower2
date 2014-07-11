@@ -19,6 +19,7 @@ AVRDUDE_COMMAND?=avrdude -p $(MCU) -c buspirate -P $(AVRDUDE_PORT)
 
 CC=avr-gcc
 OBJCOPY?=avr-objcopy
+OBJDUMP?=avr-objdump
 
 BUILD_DIR=build
 GOAL_FILE=$(BUILD_DIR)/$(GOAL)-$(ROBONET_OWN_ADDRESS).hex
@@ -98,6 +99,10 @@ upload: $(GOAL_FILE)
 .PHONY: fuses
 fuses:
 	$(AVRDUDE_COMMAND) -U lfuse:w:0xe4:m -U hfuse:w:0xd8:m
+
+.PHONY: objdump
+objdump: $(GOAL_FILE:.hex=.elf)
+	$(OBJDUMP) -S $< | less
 
 .PHONY: clean
 clean:
