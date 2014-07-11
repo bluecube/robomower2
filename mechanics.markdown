@@ -19,7 +19,7 @@ is very much needed when starting the motors) and gives a much stronger mount fo
 output wheel axle.
 
 ![Overview]({{ site.baseurl }}/img/2014-02/overview.jpg)
-![Transmission]({{ site.baseurl }}/img/2014-02/transmission.jpg)
-![Transmission]({{ site.baseurl }}/img/2014-06/motor_back.jpg)
-![Transmission]({{ site.baseurl }}/img/2014-06/motor_front.jpg)
+![Transmission - mounted]({{ site.baseurl }}/img/2014-02/transmission.jpg)
+![Motor on the planetary transmission]({{ site.baseurl }}/img/2014-06/motor_back.jpg)
+![Planetary transmission with the pulley and mounting plate]({{ site.baseurl }}/img/2014-06/motor_front.jpg)
 
