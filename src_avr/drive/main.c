@@ -84,7 +84,7 @@ static uint16_t latch_encoder_ticks16(uint16_t* restrict state)
         //
         // If there was only a single change without counter tick, we ignore it
         // and declare that the read happened before it (which is correct behavior).
-        pindCopy = pindCopy2;;
+        pindCopy = pindCopy2;
         newState.u8[0] = TCNT0;
         newState.u8[1] = ticksHigh;
     }
