@@ -11,9 +11,9 @@
         "left_sigma": 5e-2,
         "right_sigma": 5e-2,
         "PID": {
-            "kP": 30,
+            "kP": 50,
             "kI": 0.5,
-            "kD": 12
+            "kD": 0
         }
     },
 
