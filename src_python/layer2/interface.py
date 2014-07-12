@@ -234,15 +234,18 @@ class Interface:
     def _calc_checksum(self):
         checksum = 0
 
-        for name, value in self.constants.items():
+        for name in sorted(self.constants):
+            value = self.constants[name]
             checksum = self._string_checksum(name, checksum)
             checksum = self._string_checksum(repr(value), checksum)
 
-        for rr_name, rr in self.request_response.items():
+        for rr_name in sorted(self.request_response):
+            rr = self.request_response[rr_name]
             checksum = self._string_checksum(rr_name, checksum)
             checksum = rr._calc_checksum(checksum)
 
-        for broadcast_name, structure in self.broadcast.items():
+        for broadcast_name in sorted(self.broadcast):
+            structure = self.broadcast[broadcast_name]
             checksum = self._string_checksum(broadcast_name, checksum)
             checksum = structure._calc_checksum(checksum)
 
