@@ -75,8 +75,8 @@ try:
                           drive.left_ticks, drive.right_ticks)
 
         gui.velocity = drive.forward_distance() / delta_t
-        gui.rpm_l = abs(60e-3 * drive.left_ticks / (delta_t * 8))
-        gui.rpm_r = abs(60e-3 * drive.right_ticks / (delta_t * 8))
+        gui.rpm_l = abs(60e-3 * drive.left_ticks / (delta_t * 16))
+        gui.rpm_r = abs(60e-3 * drive.right_ticks / (delta_t * 16))
         gui.controller = controller
         gui.load = main_loop_load
         gui.update()
