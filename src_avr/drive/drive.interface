@@ -4,7 +4,7 @@ include = broadcast.interface
 
 [constants]
 PID_FREQUENCY = 100
-DERIVATIVE_SMOOTHING = 2
+DERIVATIVE_SMOOTHING = 3
     # How many extra servo periods are used to calculate the error derivation.
     # If set to 0, only current and previous versions are used.
     # This is not strictly necessary to keep in the interface file, but it seems
