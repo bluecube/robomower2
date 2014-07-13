@@ -1,6 +1,5 @@
 [interface]
 name = drive
-robonet_header = robonet/robonet.h
 include = broadcast.interface
 
 [constants]
@@ -24,5 +23,12 @@ kD = int16(4)
 
 [response:params]
 # No data
+
+[request:debug]
+# No data
+
+[response:debug]
+ticks = int8[11]
+currentTick = uint8
 
 # vim: filetype=dosini

@@ -11,6 +11,12 @@ def _type(t):
         ret = "u" + ret
     return ret
 
+def _array(t):
+    if not t.array:
+        return ""
+    else:
+        return "[" + str(t.array) + "]"
+
 def _string(s):
     ret = ['"']
     for char in s:
@@ -29,7 +35,7 @@ def _struct(struct, name, f):
     f("struct {}", name)
     f.open_brace()
     for field_name, t in struct.members.items():
-        f("{} {};", _type(t), field_name)
+        f("{} {}{};", _type(t), field_name, _array(t))
         if t.multiplier != 1:
             f("#define {}_{}_MULTIPLIER {}", name.upper(), field_name.upper(), t.multiplier)
     f.close_brace("}};")

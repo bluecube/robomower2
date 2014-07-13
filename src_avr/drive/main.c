@@ -43,6 +43,8 @@ int16_t kP, kI, kD;
 int16_t integratorState;
 uint8_t safetyCounter;
 
+struct debug_response debugData;
+
 int16_t clamp(int16_t val, int16_t min, int16_t max)
 {
     if (val > max)
@@ -212,6 +214,14 @@ void handle_latch_values_broadcast()
         odometryTicks = -ticks;
 }
 
+void handle_debug_request(struct debug_response* out){
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        *out = debugData;
+        debugData.currentTick = 0;
+    }
+}
+
 void stop()
 {
     servo_set(0);
@@ -261,6 +271,12 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
     for (int8_t i = 0; i < DERIVATIVE_SMOOTHING; ++i)
         lastTicks[i] = lastTicks[i + 1];
     lastTicks[DERIVATIVE_SMOOTHING] = ticks;
+
+    if (debugData.currentTick < sizeof(debugData.ticks) / sizeof(debugData.ticks[0]))
+    {
+        debugData.ticks[debugData.currentTick] = difference;
+        ++debugData.currentTick;
+    }
 
     integratorState = clamp(integratorState + error,
                             -SERVO_RANGE_TICKS, SERVO_RANGE_TICKS);

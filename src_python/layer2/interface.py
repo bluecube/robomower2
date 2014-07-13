@@ -6,7 +6,7 @@ import re
 import struct
 
 class Type:
-    regexp = re.compile(r"(u?)int(\d+)(?:\((\d+)\))?")
+    regexp = re.compile(r"(u?)int(\d+)(?:\[(\d+)\])?(?:\((\d+)\))?")
     def __init__(self, typename):
         match = self.regexp.match(typename)
         if not match:
@@ -14,21 +14,26 @@ class Type:
         self.unsigned = (match.group(1) == "u")
         self.size = int(match.group(2))
         if match.group(3) is not None:
-            self.multiplier = int(match.group(3))
+            self.array = int(match.group(3))
+        else:
+            self.array = 0
+
+        if match.group(4) is not None:
+            self.multiplier = int(match.group(4))
         else:
             self.multiplier = 1
 
         if self.size not in {8, 16, 32}:
             raise ValueError("Only 8, 16 or 32 bit numbers are supported")
 
-        self._struct_arg = "<" + {
+        self._struct_arg = "<" + ({
             (8, True): "B",
             (8, False): "b",
             (16, True): "H",
             (16, False): "h",
             (32, True): "I",
             (32, False): "i",
-            }[(self.size, self.unsigned)]
+            }[(self.size, self.unsigned)] * max(1, self.array))
 
     def __str__(self):
         if self.unsigned:
@@ -38,26 +43,40 @@ class Type:
 
         ret += str(self.size)
 
+        if self.array:
+            ret += "[{}]".format(self.array)
+
         if self.multiplier != 1:
             ret += "({})".format(int(self.multiplier))
 
         return ret
 
     def __len__(self):
-        return self.size // 8
+        return self.size * max(1, self.array) // 8
 
     def __eq__(self, other):
         return self.unsigned == other.unsigned and self.size == other.size and self.multiplier == other.multiplier
 
     def pack(self, value):
-        return struct.pack(self._struct_arg, round(value * self.multiplier))
+        if not self.array:
+            value = [value]
+        else:
+            if len(value) != self.array:
+                raise ValueError("Value has length {}, but {} was expected".format(len(value), self.array))
+
+        return struct.pack(self._struct_arg, *[round(x * self.multiplier) for x in value])
 
     def unpack(self, data):
-        value = struct.unpack(self._struct_arg, data)[0]
+        values = struct.unpack(self._struct_arg, data)
+
         if self.multiplier != 1:
-            return value / self.multiplier
+            values = [x / self.multiplier for x in values]
+
+        if not self.array:
+            return values[0]
         else:
-            return value
+            return values
+
 
 class Structure:
     def __init__(self, content):
