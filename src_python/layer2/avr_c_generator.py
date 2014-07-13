@@ -73,7 +73,7 @@ def _handle_function_decl(data, name, semicolon, f, extra_specifier = ""):
         f(")")
     f.dedent()
 
-def _generate_header(interface, header_filename, f):
+def _generate_header(interface, header_filename, robonet_header, f):
     guard = re.sub("[^A-Z]", "_", os.path.basename(header_filename).upper())
 
     f("/* Automatically generated file. Do not edit. */")
@@ -82,7 +82,7 @@ def _generate_header(interface, header_filename, f):
     f("#define {}", guard)
     f()
     f("#include <stdint.h>")
-    f('#include "{}"', interface.robonet_header)
+    f('#include "{}"', robonet_header)
     f()
     f('/* Interface checksum: 0x{:02x} */', interface.checksum)
     f()
@@ -227,9 +227,15 @@ def add_args(parser):
         help='Header file name')
     parser.add_argument('--output-source', required=True, type=argparse.FileType('wb'),
         help='Source file name')
+    parser.add_argument('--robonet-header', required=True,
+        help='Path for including the robonet header file from the generated code')
 
 def generate(interface, args):
+    robonet_header = args.robonet_header
+    if not os.path.isabs(robonet_header):
+        robonet_header = os.path.join(os.path.dirname(args.spec), robonet_header)
+
     header = codegen_helper.CodegenHelper(args.output_header)
-    _generate_header(interface, args.output_header.name, header)
+    _generate_header(interface, args.output_header.name, robonet_header, header)
     source = codegen_helper.CodegenHelper(args.output_source)
     _generate_source(interface, args.output_header.name, source)

@@ -185,12 +185,6 @@ class Interface:
             self.request_response = included.request_response
             self.broadcast = included.broadcast
 
-        if parser.has_option("interface", "robonet_header"):
-            robonet_header = parser['interface']['robonet_header']
-            if not os.path.isabs(robonet_header):
-                robonet_header = os.path.join(os.path.dirname(filename), robonet_header)
-            self.robonet_header = robonet_header
-
         if parser.has_section("constants"):
             for name, value in parser["constants"].items():
                 try:

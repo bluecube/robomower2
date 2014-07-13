@@ -1,6 +1,5 @@
 [interface]
 name = other_interface
-robonet_header = robonet/robonet.h
 
 [request:test]
 a = uint8

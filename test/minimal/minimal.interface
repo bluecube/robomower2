@@ -1,6 +1,5 @@
 [interface]
 name = enumeration_test
-robonet_header = robonet/robonet.h
 
 # Completely empty interface. Only the enumeration automatic message will be used.
 

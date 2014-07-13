@@ -12,6 +12,7 @@ endif
 F_CPU?=8000000L
 BAUD?=38400
 MCU?=atmega8
+ROBONET_PATH?=robonet
 override ROBONET_OWN_ADDRESS:=$(shell printf '%\#04x' $(ROBONET_OWN_ADDRESS))
 
 AVRDUDE_PORT?=/dev/ttyUSB0
@@ -23,6 +24,8 @@ OBJDUMP?=avr-objdump
 
 BUILD_DIR=build
 GOAL_FILE=$(BUILD_DIR)/$(GOAL)-$(ROBONET_OWN_ADDRESS).hex
+
+CFILES+=$(ROBONET_PATH)/robonet.c
 
 CFLAGS+=-DF_CPU=$(F_CPU)
 CFLAGS+=-DROBONET_OWN_ADDRESS=$(ROBONET_OWN_ADDRESS)
@@ -72,7 +75,7 @@ $(BUILD_DIR)/%.c.o: $(BUILD_DIR)/%.c
 
 $(BUILD_DIR)/%.interface.c $(BUILD_DIR)/%.interface.h: %.interface
 	$(DO_MAKE_DIR)
-	$(LAYER2_SCRIPT) --format avr_c --output-source $(basename $@).c --output-header  $(basename $@).h $<
+	$(LAYER2_SCRIPT) --format avr_c --output-source $(basename $@).c --output-header $(basename $@).h --robonet-header $(ROBONET_PATH)/robonet.h $<
 
 $(BUILD_DIR)/%.s.o: %.s
 	$(DO_MAKE_DIR)
