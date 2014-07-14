@@ -256,6 +256,9 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
             if (needStopCyclesCopy == 0)
                 currentDirection = requestedDirection;
         }
+        else
+            needStopCycles = DIRECTION_CHANGE_ZERO_CYCLE_COUNT;
+
         stop();
         return;
     }
