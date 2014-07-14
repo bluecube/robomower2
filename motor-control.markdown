@@ -11,7 +11,7 @@ The total transmission ratio is approximately 137:1, maximal speed is 1.5 m/s.
 ## Drive board
 Each motor is connected to
 [25A TrackStar car ESC](https://hobbyking.com/hobbyking/store/__14630__Turnigy_TrackStar_25A_1_18th_Scale_Brushless_Car_ESC.html),
-which is in turn controlled by a custom [driver board]({{ site.repository }}/tree/master/electronics/drive/)
+which is in turn controlled by a custom [driver board]({{ site.repository_master }}/electronics/drive/)
 mounted directly over the motors.
 The board is designed to be as simple as possible, single layered and with as little
 soldering as possible (but the TQFP package of the atmega proved to be too much for me anyway :-) ).
@@ -26,7 +26,7 @@ I've had some problems with not counting all ticks at some distances from the mo
 but after a going through a few resistor values it seems to work reliably enough.
 
 ## MCU Software
-[Drive board software]({{ site.repository }}/tree/master/src_avr/drive/) counts the encoder ticks
+[Drive board software]({{ site.repository_master }}/src_avr/drive/) counts the encoder ticks
 and generates PWM signal to control the ESC.
 At 10Hz it receives requests for motor speed and returns number of ticks
 since the last update over the RS485 (using the
@@ -59,7 +59,7 @@ bit).
 
 ### Generating PWM for the speed controller
 The PWM signal for controlling the ESC is generated using the 16 bit Timer1, using the
-[servo mini library]({{ site.repository }}/tree/master/sr_avr/servo/).
+[servo mini library]({{ site.repository_master }}/src_avr/servo/).
 In the current version the PWM is running at 100 Hz (as opposed to 50 Hz standard
 for analog servos).
 

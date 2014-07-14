@@ -1,3 +1,4 @@
 markdown: kramdown
 baseurl: /robomower2
 repository: https://github.com/bluecube/robomower2
+repository_master: https://github.com/bluecube/robomower2/tree/master
