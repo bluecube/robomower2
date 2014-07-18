@@ -77,7 +77,8 @@ static uint16_t latch_encoder_ticks16(uint16_t* restrict state)
 
     uint8_t pindCopy2 = PIND; // This is the point that decides if there was a change.
 
-    if ((pindCopy & ~pindCopy2) & _BV(PD4)) // the old bit at PD4 was true and the new one is false
+    uint8_t overflowBit = pindCopy & ~pindCopy2;
+    if (overflowBit & _BV(PD4)) // the old bit at PD4 was true and the new one is false
     {
         // The sensor value has changed and the change might have occured between
         // reading the three parts. We need to do it all over again.
@@ -122,7 +123,8 @@ static uint8_t latch_encoder_ticks8(uint8_t* restrict state)
 
     uint8_t pindCopy2 = PIND;
 
-    if ((pindCopy & ~pindCopy2) & _BV(PD4))
+    uint8_t overflowBit = pindCopy & ~pindCopy2;
+    if (overflowBit & _BV(PD4))
     {
         pindCopy = pindCopy2;
         newState = TCNT0;
