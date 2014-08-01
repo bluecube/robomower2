@@ -19,9 +19,9 @@ def _point_to_line(p, l):
     b = _point_to_point(p, l[1])
     c = dx * dx + dy * dy
 
-    if b > a + c:
+    if b >= a + c:
         return a
-    elif a > b + c:
+    elif a >= b + c:
         return b
     else:
         tmp = (dy * x - dx * y - x1 * y2 + x2 * y1)
