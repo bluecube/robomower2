@@ -11,3 +11,5 @@ The switch in the schematic is a big red emergency switch that cuts off power to
 the motors (this should stop the robot imediately because of the high transmission
 ratio).
 The voltage behind the e-switch is usesd as an input to the control computer.
+
+![Fuse panel with wiring underneath it]({{ site.baseurl }}/img/2014-08/fuse-panel.jpg)
