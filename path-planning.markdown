@@ -9,6 +9,30 @@ The goal is to have limited velocity, angular velocity, acceleration (magnitude 
 full 2D acceleration), angular acceleration, jerk (probably only second derivation of (scalar) speed?)
 and angular jerk.
 
+## Architecture
+
+- Robot state $$(x, y, \phi, v, \omega, \ldots)$$
+- Control limits (maximal speed, angular speed, acceleration, angular acceleration,
+  jerk, angular jerk,
+  [minimal wheel speed]({{ site.baseurl }}/motor-control.html#moral-of-the-story)).
+- Working area is split into convex blocks.
+- **High level planner** has only a graph of these blocks with edges weighted by
+  distance + extra cost.
+- **Local planner** tries to connect two states in the path plan with some
+  simple curve (interval of max negative jerk, interval of max positive jerk for
+  both angular and linear speeds??).
+  Output of the local planner is checked if it doesn't exceed control limits,
+  if it does, the path is not used.
+- **Detailed planner**; probably some variation of RRT. Uses local planner inside.
+- Algorithm:
+    - Find path through the convex blocks using the high level planner
+    - Use the local planner to find control inputs to go through the rough path
+      from the previous step at some constant cruise speed.
+    - If local planner fails, use the detailed planner for this block only
+      (or several surrounding blocks, this needs some more thinking).
+
+## Notes
+
 These are just some notes.
 I need to read a lot more stuff before implementing any of this.
 
