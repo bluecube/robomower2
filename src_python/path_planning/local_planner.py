@@ -32,7 +32,6 @@ def _find_poly(maximum, value0, value1, deriv0, deriv1):
                      value1,
                      deriv0,
                      deriv1])
-
     x = numpy.linalg.solve(A, b)
     return numpy.polynomial.Polynomial(x)
 
@@ -52,29 +51,63 @@ def _check_poly_positive(p, maximum):
 def plan_path(state1, state2):
     """ Find path from state1 to state2, ignoring obstacles."""
 
+    # Finding degree 4 polynomials for x and y.
+    # The parameter goes from 0 to 1,conditions are:
+    # x(0) = state1.x
+    # y(0) = state1.y
+    # x(1) = state2.x
+    # y(1) = state2.y
+    # diff(x)(0) = cos(state1.heading) * len1
+    # diff(y)(0) = sin(state1.heading) * len1
+    # diff(x)(1) = cos(state2.heading) * len2
+    # diff(y)(1) = sin(state2.heading) * len2
+    # diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0) / len1**3/2 = state1.curvature
+    # diff(x)(1) * diff(diff(y))(1) - diff(y)(1) * diff(diff(x))(1) / len2**3/2 = state1.curvature
+
     # Mixing endpoint velocity into the endpoint derivations generates smoother
     # paths (although the derivations are never used directly).
     # We are using average with eucleidean distance between the end points, because
     # otherwise the conditions degenerate with zero end speeds (hello, cpt Obvious).
     # TODO Check this again
     rawdist = math.hypot(state2.x - state1.x, state2.y - state1.y)
-    xy_len1 = (rawdist + state1.velocity) / 2
-    xy_len2 = (rawdist + state2.velocity) / 2
+    len1 = (rawdist + state1.velocity) / 2
+    len2 = (rawdist + state2.velocity) / 2
 
-    x = _find_poly(1,
-                   state1.x, state2.x,
-                   math.cos(state1.heading) * xy_len1,
-                   math.cos(state2.heading) * xy_len1)
-    y = _find_poly(1,
-                   state1.y, state2.y,
-                   math.sin(state1.heading) * xy_len2,
-                   math.sin(state2.heading) * xy_len2)
+    c1 = math.cos(state1.heading)
+    s1 = math.sin(state1.heading)
+    c2 = math.cos(state2.heading)
+    s2 = math.sin(state2.heading)
 
-    global x_poly
-    global y_poly
-    x_poly = x
-    y_poly = y
+    # The unknowns vector goes x0 ... x4, y0 ... y4
+    A = numpy.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], # x(0)
+                     [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], # x(1)
+                     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0], # y(0)
+                     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1], # y(1)
+                     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0], # diff(x)(0)
+                     [0, 1, 2, 3, 4, 0, 0, 0, 0, 0], # diff(x)(1)
+                     [0, 0, 0, 0, 0, 0, 1, 0, 0, 0], # diff(y)(0)
+                     [0, 0, 0, 0, 0, 0, 1, 2, 3, 4], # diff(y)(1)
+                     [0 ,0, -2 * s1, 0, 0,
+                      0, 0,  2 * c1, 0, 0], # (diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0)) / len1
+                     [0 ,0, -2 * s2, -6 * s2, -12 * s2,
+                      0, 0,  2 * c2,  6 * c2,  12 * c2]]) # (diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0)) / len2
+    print(A)
+    b = numpy.array([state1.x,
+                     state2.x,
+                     state1.y,
+                     state2.y,
+                     c1 * len1,
+                     c2 * len2,
+                     s1 * len1,
+                     s2 * len2,
+                     state1.curvature * len1 * len1,
+                     state2.curvature * len2 * len2])
+    print(b)
+    coefs = numpy.linalg.solve(A, b)
 
+    assert(len(coefs) == 10)
+    x = numpy.polynomial.Polynomial(coefs[:5])
+    y = numpy.polynomial.Polynomial(coefs[5:])
 
     length = 0
     interpolation_table = [] # Array of distances at fixed t values. Used for interpolating curve
@@ -164,31 +197,15 @@ def plan_path(state1, state2):
         vv = v(time)
         omega = curvature * vv
 
-        return x(t), y(t), vv, omega, dv(time)
-
-    return travel_time, ret # TODO: Return path iterator instead of this
-
-    # Verify dynamic properties depending on curvature.
-    # These are verified only approximately, by sampling the values in several points.
-    for i in range(interpolation_steps):
-        xx, yy, vv, omega, at = ret(travel_time * i / interpolation_steps)
-
-        if abs(omega) > omega_max:
-            print("Angular velocity limit exceeded")
-            return None
-
-        ar = vv * omega
-        if (at / at_max)**2 + (ar / ar_max)**2 > 1:
-            print("Acceleration limit exceeded")
-            return None
+        return x(t), y(t), vv, curvature, dv(time)
 
     return travel_time, ret # TODO: Return path iterator instead of this
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    state1 = state.State(0, 0, math.radians(0), 1, 0)
-    state2 = state.State(5, 1, math.radians(0), 1, 0.1)
+    state1 = state.State(0, 0, math.radians(0), 1, 0, 0)
+    state2 = state.State(5, 1, math.radians(45), 2, 0, 0)
 #    state3 = state.State(10, 0, math.radians(0), 1, 0)
 
     travel_time, func = plan_path(state1, state2)
