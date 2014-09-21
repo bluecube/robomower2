@@ -117,7 +117,7 @@ def plan_path(state1, state2):
     for i in range(1, interpolation_steps + 1):
         t = i / interpolation_steps # Curve parameter
         xx = x(t)
-        yy = x(t)
+        yy = y(t)
         dist = math.hypot(xx - prev_x, yy - prev_y)
         length += dist
         interpolation_table.append(dist)
