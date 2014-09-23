@@ -25,9 +25,9 @@ def _find_poly(maximum, value0, value1, deriv0, deriv1):
     diff(p)(maximum) = deriv1"""
 
     A = numpy.array([[1, 0, 0, 0], # p(0)
-                     [1, 1 * maximum, 1 * maximum * maximum, 1 * maximum * maximum * maximum], # p(1)
+                     [1, 1 * maximum, 1 * maximum * maximum, 1 * maximum * maximum * maximum], # p(maximum)
                      [0, 1, 0, 0], # diff(p)(0)
-                     [0, 1, 2 * maximum, 3 * maximum * maximum]]) # diff(p)(1)
+                     [0, 1, 2 * maximum, 3 * maximum * maximum]]) # diff(p)(maximum)
     b = numpy.array([value0,
                      value1,
                      deriv0,
@@ -54,24 +54,21 @@ def plan_path(state1, state2):
     # Finding degree 4 polynomials for x and y.
     # The parameter goes from 0 to 1,conditions are:
     # x(0) = state1.x
-    # y(0) = state1.y
     # x(1) = state2.x
+    # y(0) = state1.y
     # y(1) = state2.y
     # diff(x)(0) = cos(state1.heading) * len1
-    # diff(y)(0) = sin(state1.heading) * len1
     # diff(x)(1) = cos(state2.heading) * len2
+    # diff(y)(0) = sin(state1.heading) * len1
     # diff(y)(1) = sin(state2.heading) * len2
-    # diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0) / len1**3/2 = state1.curvature
-    # diff(x)(1) * diff(diff(y))(1) - diff(y)(1) * diff(diff(x))(1) / len2**3/2 = state1.curvature
+    # diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0) / len1**3 = state1.curvature
+    # diff(x)(1) * diff(diff(y))(1) - diff(y)(1) * diff(diff(x))(1) / len2**3 = state2.curvature
 
     # Mixing endpoint velocity into the endpoint derivations generates smoother
-    # paths (although the derivations are never used directly).
-    # We are using average with eucleidean distance between the end points, because
-    # otherwise the conditions degenerate with zero end speeds (hello, cpt Obvious).
-    # TODO Check this again
+    # paths (ratios 0.5 and 0.5 were experimentally chosen for the smoothest paths).
     rawdist = math.hypot(state2.x - state1.x, state2.y - state1.y)
-    len1 = (rawdist + state1.velocity) / 2
-    len2 = (rawdist + state2.velocity) / 2
+    len1 = 0.5 * rawdist + 0.5 * state1.velocity
+    len2 = 0.5 * rawdist + 0.5 * state2.velocity
 
     c1 = math.cos(state1.heading)
     s1 = math.sin(state1.heading)
@@ -87,9 +84,9 @@ def plan_path(state1, state2):
                      [0, 1, 2, 3, 4, 0, 0, 0, 0, 0], # diff(x)(1)
                      [0, 0, 0, 0, 0, 0, 1, 0, 0, 0], # diff(y)(0)
                      [0, 0, 0, 0, 0, 0, 1, 2, 3, 4], # diff(y)(1)
-                     [0 ,0, -2 * s1, 0, 0,
+                     [0, 0, -2 * s1, 0, 0,
                       0, 0,  2 * c1, 0, 0], # (diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0)) / len1
-                     [0 ,0, -2 * s2, -6 * s2, -12 * s2,
+                     [0, 0, -2 * s2, -6 * s2, -12 * s2,
                       0, 0,  2 * c2,  6 * c2,  12 * c2]]) # (diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0)) / len2
     print(A)
     b = numpy.array([state1.x,
@@ -110,8 +107,11 @@ def plan_path(state1, state2):
     y = numpy.polynomial.Polynomial(coefs[5:])
 
     length = 0
-    interpolation_table = [] # Array of distances at fixed t values. Used for interpolating curve
-                             # parameter from distance along the curve
+
+    # Array of distances at fixed t values. Used for interpolating curve
+    # parameter from distance along the curve
+    interpolation_table = []
+
     prev_x = state1.x
     prev_y = state1.y
     for i in range(1, interpolation_steps + 1):
@@ -125,6 +125,7 @@ def plan_path(state1, state2):
         prev_y = yy
 
     assert(len(interpolation_table) == interpolation_steps)
+    #length = scipy.integrate.fixed_quad(lambda p: numpy.sqrt(dx(p) * dx(p) + dy(p) * dy(p)), 0, 1)[0]
     print("length:", length)
 
     a = state1.acceleration - state2.acceleration
@@ -197,21 +198,20 @@ def plan_path(state1, state2):
         vv = v(time)
         omega = curvature * vv
 
-        return x(t), y(t), vv, curvature, dv(time)
+        return x(t), y(t), vv, omega, dv(time)
 
     return travel_time, ret # TODO: Return path iterator instead of this
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    state1 = state.State(0, 0, math.radians(0), 1, 0, 0)
-    state2 = state.State(5, 1, math.radians(45), 2, 0, 0)
-#    state3 = state.State(10, 0, math.radians(0), 1, 0)
+    state1 = state.State(0, 0, math.radians(90), 1, 0, 0)
+    state2 = state.State(5, 1, math.radians(90), 0, 0, 0)
 
     travel_time, func = plan_path(state1, state2)
 
     t = numpy.linspace(0, travel_time, 1000)
-    x, y, v, curvature, at = zip(*[func(x) for x in t])
+    x, y, v, omega, at = zip(*[func(x) for x in t])
 
     plt.figure(1)
     plt.subplot(121)
@@ -222,5 +222,5 @@ if __name__ == "__main__":
     plt.plot(t, v, "-r", label="Velocity")
     plt.legend()
     plt.subplot(224)
-    plt.plot(t, curvature, "-r", label="Angular velocity")
+    plt.plot(t, omega, "-r", label="Angular velocity")
     plt.show()
