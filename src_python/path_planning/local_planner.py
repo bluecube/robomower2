@@ -7,14 +7,7 @@ try:
 except SystemError:
     import state
 
-
-v_max = 2
-at_max = 1
-ar_max = 2
-j_max = 10
-omega_max = 1
-
-interpolation_steps = 20
+_interpolation_steps = 20
 epsilon = 1e-6
 
 _A = numpy.array([[1, 0, 0, 0,  0,  0], # x(0)
@@ -24,18 +17,94 @@ _A = numpy.array([[1, 0, 0, 0,  0,  0], # x(0)
                   [0, 0, 2, 0,  0,  0], # diff(diff(x))(0)
                   [0, 0, 2, 6, 12, 20]]) # diff(diff(x))(1)
 
-def _check_poly_positive(p, maximum):
-    """ Check if p(t) > 0 for all t in [0, 1] """
-    if p(0) < -epsilon or p(maximum) < -epsilon:
-        return False
+class _PathIterator:
+    # Path properties:
 
-    for t in p.deriv().roots():
-        if t < 0 or t > maximum:
-            continue
-        if p(t) < -epsilon:
-            return False
+    # self.travel_time
+    # self.length
 
-    return True
+    # Moving through the path:
+
+    def reset(self):
+        self.time = 0
+        self.distance = 0
+        self._curve_param = 0
+        self._i = 0
+        self._last_interpolation_distance = 0
+
+    def jump_to(self, time):
+        self.reset()
+        self.advance(time)
+
+    def advance(self, dt):
+        self.time += dt
+
+        if self.time > self.travel_time:
+            raise StopIteration()
+
+        self.distance = self._iv(self.time)
+        remaining_distance = self.distance - self._last_interpolation_distance
+
+        for s in self._interpolation_table[self._i:]:
+            if remaining_distance < s:
+                self._curve_param = (self._i / _interpolation_steps) + (remaining_distance / (_interpolation_steps * s))
+                break
+            else:
+                remaining_distance -= s
+                self._i += 1
+                self._last_interpolation_distance += s
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.advance(1e-3)
+        return self
+
+    # Accessing current state:
+
+    # self.time
+    # self.distance
+
+    @property
+    def x(self):
+        return self._x(self._curve_param)
+
+    @property
+    def y(self):
+        return self._y(self._curve_param)
+
+    @property
+    def heading(self):
+        return math.atan2(self._dy(self._curve_param), self._dx(self._curve_param))
+
+    @property
+    def velocity(self):
+        return self._v(self.time)
+
+    @property
+    def acceleration(self):
+        return self._dv(self.time)
+
+    @property
+    def curvature(self):
+        dx = self._dx(self._curve_param)
+        ddx = self._ddx(self._curve_param)
+        dy = self._dy(self._curve_param)
+        ddy = self._ddy(self._curve_param)
+        length = dx * dx + dy * dy
+        return (dx * ddy + dy * ddx) / (length**1.5)
+
+    @property
+    def angular_velocity(self):
+        return self.curvature * self.velocity
+
+    @property
+    def state(self):
+        return state.State(self.x, self.y,self.heading,
+                           self.velocity, self.acceleration,
+                           self.curvature)
+
 
 def plan_path(state1, state2):
     """ Find path from state1 to state2, ignoring obstacles."""
@@ -74,8 +143,8 @@ def plan_path(state1, state2):
 
     prev_x = state1.x
     prev_y = state1.y
-    for i in range(1, interpolation_steps + 1):
-        t = i / interpolation_steps # Curve parameter
+    for i in range(1, _interpolation_steps + 1):
+        t = i / _interpolation_steps # Curve parameter
         xx = x(t)
         yy = y(t)
         dist = math.hypot(xx - prev_x, yy - prev_y)
@@ -84,7 +153,7 @@ def plan_path(state1, state2):
         prev_x = xx
         prev_y = yy
 
-    assert(len(interpolation_table) == interpolation_steps)
+    assert(len(interpolation_table) == _interpolation_steps)
     #length = scipy.integrate.fixed_quad(lambda p: numpy.sqrt(dx(p) * dx(p) + dy(p) * dy(p)), 0, 1)[0]
 
     a = state1.acceleration - state2.acceleration
@@ -113,57 +182,22 @@ def plan_path(state1, state2):
                                     domain=(0, travel_time),
                                     window=(0, 1))
 
-    assert(_check_poly_positive(v, travel_time)) # This should be true because D is positive ... really?
+    it = _PathIterator()
+    it.reset()
+    it.length = length
+    it.travel_time = travel_time
+    it._x = x
+    it._dx = x.deriv()
+    it._ddx = it._dx.deriv()
+    it._y = y
+    it._dy = y.deriv()
+    it._ddy = it._dy.deriv()
+    it._v = v
+    it._dv = v.deriv()
+    it._iv = v.integ()
+    it._interpolation_table = interpolation_table
 
-    dx = x.deriv()
-    dy = y.deriv()
-    dv = v.deriv()
-    ddx = dx.deriv()
-    ddy = dy.deriv()
-    ddv = dv.deriv()
-    iv = v.integ()
-
-    # Verify dynamic properties not depending on curvature.
-    # These are verified exactly (for the whole curve at once).
-    if not _check_poly_positive(v_max - v, travel_time):
-        print("Velocity limit exceeded")
-        return None
-
-    if not _check_poly_positive(at_max - dv, travel_time) or \
-       not _check_poly_positive(at_max + dv, travel_time):
-        print("Velocity limit exceeded")
-        return None
-
-    if not _check_poly_positive(j_max - ddv, travel_time) or \
-       not _check_poly_positive(j_max + ddv, travel_time):
-        print("Jerk limit exceeded")
-        return None
-
-    def ret(time):
-        # interpolate the curve parameter:
-        t = 1
-        remaining_distance = iv(time)
-        for i, s in enumerate(interpolation_table):
-            if remaining_distance < s:
-                t = (i / interpolation_steps) + (remaining_distance / (interpolation_steps * s))
-                break
-            else:
-                remaining_distance -= s
-
-        dxx = dx(t)
-        dyy = dy(t)
-        ddxx = ddx(t)
-        ddyy = ddy(t)
-
-        factor = math.hypot(dxx, dyy)
-        curvature = (dxx * ddyy - dyy * ddxx) / (factor * factor * factor)
-
-        vv = v(time)
-        omega = curvature * vv
-
-        return x(t), y(t), vv, omega, dv(time)
-
-    return travel_time, ret # TODO: Return path iterator instead of this
+    return it
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
@@ -171,10 +205,25 @@ if __name__ == "__main__":
     state1 = state.State(0, 0, math.radians(90), 1, 0, -3)
     state2 = state.State(5, 1, math.radians(90), 0, 0, 0)
 
-    travel_time, func = plan_path(state1, state2)
+    iterator = plan_path(state1, state2)
 
-    t = numpy.linspace(0, travel_time, 1000)
-    x, y, v, omega, at = zip(*[func(x) for x in t])
+    plot_n = 1000
+
+    t = numpy.empty(plot_n)
+    x = numpy.empty(plot_n)
+    y = numpy.empty(plot_n)
+    v = numpy.empty(plot_n)
+    omega = numpy.empty(plot_n)
+    for i in range(plot_n):
+        t[i] = iterator.time
+        x[i] = iterator.x
+        y[i] = iterator.y
+        v[i] = iterator.velocity
+        omega[i] = iterator.angular_velocity
+        try:
+            iterator.advance(iterator.travel_time / plot_n)
+        except StopIteration:
+            break
 
     plt.figure(1)
     plt.subplot(121)
