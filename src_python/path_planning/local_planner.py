@@ -17,23 +17,12 @@ omega_max = 1
 interpolation_steps = 20
 epsilon = 1e-6
 
-def _find_poly(maximum, value0, value1, deriv0, deriv1):
-    """ Return a polynomial p, so that
-    p(0) = value0,
-    p(maximum) = value1,
-    diff(p)(0) = deriv0
-    diff(p)(maximum) = deriv1"""
-
-    A = numpy.array([[1, 0, 0, 0], # p(0)
-                     [1, 1 * maximum, 1 * maximum * maximum, 1 * maximum * maximum * maximum], # p(maximum)
-                     [0, 1, 0, 0], # diff(p)(0)
-                     [0, 1, 2 * maximum, 3 * maximum * maximum]]) # diff(p)(maximum)
-    b = numpy.array([value0,
-                     value1,
-                     deriv0,
-                     deriv1])
-    x = numpy.linalg.solve(A, b)
-    return numpy.polynomial.Polynomial(x)
+_A = numpy.array([[1, 0, 0, 0,  0,  0], # x(0)
+                  [1, 1, 1, 1,  1,  1], # x(1)
+                  [0, 1, 0, 0,  0,  0], # diff(x)(0)
+                  [0, 1, 2, 3,  4,  5], # diff(x)(1)
+                  [0, 0, 2, 0,  0,  0], # diff(diff(x))(0)
+                  [0, 0, 2, 6, 12, 20]]) # diff(diff(x))(1)
 
 def _check_poly_positive(p, maximum):
     """ Check if p(t) > 0 for all t in [0, 1] """
@@ -51,66 +40,37 @@ def _check_poly_positive(p, maximum):
 def plan_path(state1, state2):
     """ Find path from state1 to state2, ignoring obstacles."""
 
-    # Finding degree 4 polynomials for x and y.
-    # The parameter goes from 0 to 1,conditions are:
-    # x(0) = state1.x
-    # x(1) = state2.x
-    # y(0) = state1.y
-    # y(1) = state2.y
-    # diff(x)(0) = cos(state1.heading) * len1
-    # diff(x)(1) = cos(state2.heading) * len2
-    # diff(y)(0) = sin(state1.heading) * len1
-    # diff(y)(1) = sin(state2.heading) * len2
-    # diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0) / len1**3 = state1.curvature
-    # diff(x)(1) * diff(diff(y))(1) - diff(y)(1) * diff(diff(x))(1) / len2**3 = state2.curvature
-
     # Mixing endpoint velocity into the endpoint derivations generates smoother
     # paths (ratios 0.5 and 0.5 were experimentally chosen for the smoothest paths).
     rawdist = math.hypot(state2.x - state1.x, state2.y - state1.y)
     len1 = 0.5 * rawdist + 0.5 * state1.velocity
     len2 = 0.5 * rawdist + 0.5 * state2.velocity
 
-    c1 = math.cos(state1.heading)
-    s1 = math.sin(state1.heading)
-    c2 = math.cos(state2.heading)
-    s2 = math.sin(state2.heading)
+    diff1x = len1 * math.cos(state1.heading)
+    diff1y = len1 * math.sin(state1.heading)
+    diff2x = len2 * math.cos(state2.heading)
+    diff2y = len2 * math.sin(state2.heading)
 
-    # The unknowns vector goes x0 ... x4, y0 ... y4
-    A = numpy.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0], # x(0)
-                     [1, 1, 1, 1, 1, 0, 0, 0, 0, 0], # x(1)
-                     [0, 0, 0, 0, 0, 1, 0, 0, 0, 0], # y(0)
-                     [0, 0, 0, 0, 0, 1, 1, 1, 1, 1], # y(1)
-                     [0, 1, 0, 0, 0, 0, 0, 0, 0, 0], # diff(x)(0)
-                     [0, 1, 2, 3, 4, 0, 0, 0, 0, 0], # diff(x)(1)
-                     [0, 0, 0, 0, 0, 0, 1, 0, 0, 0], # diff(y)(0)
-                     [0, 0, 0, 0, 0, 0, 1, 2, 3, 4], # diff(y)(1)
-                     [0, 0, -2 * s1, 0, 0,
-                      0, 0,  2 * c1, 0, 0], # (diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0)) / len1
-                     [0, 0, -2 * s2, -6 * s2, -12 * s2,
-                      0, 0,  2 * c2,  6 * c2,  12 * c2]]) # (diff(x)(0) * diff(diff(y))(0) - diff(y)(0) * diff(diff(x))(0)) / len2
-    print(A)
     b = numpy.array([state1.x,
                      state2.x,
-                     state1.y,
+                     diff1x,
+                     diff2x,
+                     - state1.curvature * len1 * diff1y,
+                     - state2.curvature * len2 * diff2y])
+    x = numpy.polynomial.Polynomial(numpy.linalg.solve(_A, b))
+
+    b = numpy.array([state1.y,
                      state2.y,
-                     c1 * len1,
-                     c2 * len2,
-                     s1 * len1,
-                     s2 * len2,
-                     state1.curvature * len1 * len1,
-                     state2.curvature * len2 * len2])
-    print(b)
-    coefs = numpy.linalg.solve(A, b)
-
-    assert(len(coefs) == 10)
-    x = numpy.polynomial.Polynomial(coefs[:5])
-    y = numpy.polynomial.Polynomial(coefs[5:])
-
-    length = 0
+                     diff1y,
+                     diff2y,
+                     state1.curvature * len1 * diff1x,
+                     state2.curvature * len2 * diff2x])
+    y = numpy.polynomial.Polynomial(numpy.linalg.solve(_A, b))
 
     # Array of distances at fixed t values. Used for interpolating curve
     # parameter from distance along the curve
     interpolation_table = []
+    length = 0
 
     prev_x = state1.x
     prev_y = state1.y
@@ -126,7 +86,6 @@ def plan_path(state1, state2):
 
     assert(len(interpolation_table) == interpolation_steps)
     #length = scipy.integrate.fixed_quad(lambda p: numpy.sqrt(dx(p) * dx(p) + dy(p) * dy(p)), 0, 1)[0]
-    print("length:", length)
 
     a = state1.acceleration - state2.acceleration
     b = 6 * (state1.velocity + state2.velocity)
@@ -146,9 +105,13 @@ def plan_path(state1, state2):
 
     assert(travel_time > 0)
 
-    v = _find_poly(travel_time,
-                   state1.velocity, state2.velocity,
-                   state1.acceleration, state2.acceleration)
+    b = numpy.array([state1.velocity,
+                     state2.velocity,
+                     state1.acceleration,
+                     state2.acceleration])
+    v = numpy.polynomial.Polynomial(numpy.linalg.solve(_A[:4, :4], b),
+                                    domain=(0, travel_time),
+                                    window=(0, 1))
 
     assert(_check_poly_positive(v, travel_time)) # This should be true because D is positive ... really?
 
@@ -205,7 +168,7 @@ def plan_path(state1, state2):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    state1 = state.State(0, 0, math.radians(90), 1, 0, 0)
+    state1 = state.State(0, 0, math.radians(90), 1, 0, -3)
     state2 = state.State(5, 1, math.radians(90), 0, 0, 0)
 
     travel_time, func = plan_path(state1, state2)
@@ -223,4 +186,5 @@ if __name__ == "__main__":
     plt.legend()
     plt.subplot(224)
     plt.plot(t, omega, "-r", label="Angular velocity")
+    plt.legend()
     plt.show()
