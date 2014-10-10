@@ -3,7 +3,7 @@ import logging
 import logging.config
 import sys
 import util
-import json
+import json_mod
 
 import robonet
 import layer2
@@ -23,8 +23,8 @@ class Sample:
         self.y = 0
         self.heading = 0
 
-with open("config.json", "r") as fp:
-    config = json.load(fp)
+with open("robomower.config", "r") as fp:
+    config = json_mod.load(fp)
 
 logging.config.dictConfig(config['logging'])
 
