@@ -2,10 +2,7 @@
 
 import numpy
 import math
-try:
-    from . import state
-except SystemError:
-    import state
+from . import state
 
 _interpolation_steps = 20
 epsilon = 1e-6
@@ -197,42 +194,3 @@ def plan_path(state1, state2):
     it._interpolation_table = interpolation_table
 
     return it
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    state1 = state.State(0, 0, math.radians(90), 1, 0, -3)
-    state2 = state.State(5, 1, math.radians(90), 0, 0, 0)
-
-    iterator = plan_path(state1, state2)
-
-    plot_n = 1000
-
-    t = numpy.empty(plot_n)
-    x = numpy.empty(plot_n)
-    y = numpy.empty(plot_n)
-    v = numpy.empty(plot_n)
-    omega = numpy.empty(plot_n)
-    for i in range(plot_n):
-        t[i] = iterator.time
-        x[i] = iterator.x
-        y[i] = iterator.y
-        v[i] = iterator.velocity
-        omega[i] = iterator.angular_velocity
-        try:
-            iterator.advance(iterator.travel_time / plot_n)
-        except StopIteration:
-            break
-
-    plt.figure(1)
-    plt.subplot(121)
-    plt.plot(x, y, "-r", label="Path")
-    plt.axis('equal')
-    plt.legend()
-    plt.subplot(222)
-    plt.plot(t, v, "-r", label="Velocity")
-    plt.legend()
-    plt.subplot(224)
-    plt.plot(t, omega, "-r", label="Angular velocity")
-    plt.legend()
-    plt.show()
