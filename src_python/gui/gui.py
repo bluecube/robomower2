@@ -170,3 +170,11 @@ class Gui:
         self._p_slider.callback = callback
         self._i_slider.callback = callback
         self._d_slider.callback = callback
+
+    @property
+    def world_map(self):
+        raise AttributeError("Write only!")
+
+    @world_map.setter
+    def world_map(self, world_map):
+        self._map.polygons = world_map.polygons

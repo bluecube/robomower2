@@ -10,6 +10,7 @@ class MapWidget:
         self.offset = (0, 0)
 
         self.lines = None
+        self.polygons = None
 
     def draw(self, surface, x, y, w, h, mouse):
         x_center = x + w // 2
@@ -49,6 +50,13 @@ class MapWidget:
                                                                  y_offset,
                                                                  scale_step + 1, text.get_height() // 2),
                              i % 2)
+
+        # extra polygons
+        if self.polygons is not None:
+            for polygon in self.polygons:
+                projected = [projection(x, y) for x, y in polygon]
+                pygame.draw.polygon(surface, config.color1_50, projected)
+                pygame.draw.lines(surface, config.color1, True, projected)
 
         # extra lines
         if self.lines is not None:

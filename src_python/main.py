@@ -10,7 +10,7 @@ import layer2
 import mock_hw
 
 import differential_drive
-import patterns
+import world_map
 
 import datalogger
 import gui as robotgui
@@ -48,6 +48,7 @@ try:
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
 
     #gui._map.lines = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
+    gui.world_map = world_map.WorldMap()
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]
