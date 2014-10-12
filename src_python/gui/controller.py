@@ -10,7 +10,7 @@ class GuiController:
         lim = gui._config["limits"]
 
         self._max_velocity = lim["velocity"]
-        self._x_accel = lim["angular_acceleration"] / lim["angular_velocity"]
+        self._x_accel = 0.25 / lim["angular_velocity"]
         self._x = 0
         self.forward = 0
 
