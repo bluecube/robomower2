@@ -3,12 +3,7 @@
 
 #include <stdint.h>
 
-#ifndef SERVO_PERIOD
-/** Period of the servo signal in milliseconds.*/
-#define SERVO_PERIOD 20
-#endif
-
-#include "preprocessor.h"
+#include "preprocessor.h" // Included here because SERVO_RANGE_TICKS is part of the interface
 
 void servo_init();
 void servo_enable();

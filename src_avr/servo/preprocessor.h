@@ -5,6 +5,11 @@
 #error This will work only for 8MHz CPU frequency
 #endif
 
+#ifndef SERVO_PERIOD
+/** Period of the servo signal in milliseconds.*/
+#define SERVO_PERIOD 20
+#endif
+
 #define SERVO_PRESCALER 8
 #define SERVO_TICKS_PER_MS (F_CPU / (SERVO_PRESCALER * (double)1000))
 #define SERVO_NEUTRAL_POSITION_TICKS ((uint16_t)(1.5 * SERVO_TICKS_PER_MS))
