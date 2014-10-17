@@ -13,7 +13,7 @@ class Prm:
 
     pass
 
-class _PathIterator:
+class _PathIterator(path_iterator.PathIterator):
     def __init__(self, states, travel_time):
         if len(states) < 2:
             raise ValueError("There must be at least two states.")
@@ -27,13 +27,6 @@ class _PathIterator:
 
     def _load_sub(self):
         self._sub = local_planner.plan_path(states[self._i], states[self._i + 1])
-
-    def jump_to(self, time):
-        if (time > self.time):
-            self.advance(time - self.time)
-        else:
-            self.reset()
-            self.advance(time)
 
     def advance(self, dt):
         self.time += dt

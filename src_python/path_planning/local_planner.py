@@ -14,7 +14,7 @@ _A = numpy.array([[1, 0, 0, 0,  0,  0], # x(0)
                   [0, 0, 2, 0,  0,  0], # diff(diff(x))(0)
                   [0, 0, 2, 6, 12, 20]]) # diff(diff(x))(1)
 
-class _PathIterator:
+class _PathIterator(path_iterator.PathIterator):
     # Path properties:
 
     # self.travel_time
@@ -51,13 +51,6 @@ class _PathIterator:
                 self._i += 1
                 self._last_interpolation_distance += s
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self.advance(1e-3)
-        return self
-
     # Accessing current state:
 
     # self.time
@@ -84,6 +77,10 @@ class _PathIterator:
         return self._dv(self.time)
 
     @property
+    def jerk(self):
+        return self._ddv(self.time)
+
+    @property
     def curvature(self):
         dx = self._dx(self._curve_param)
         ddx = self._ddx(self._curve_param)
@@ -91,16 +88,6 @@ class _PathIterator:
         ddy = self._ddy(self._curve_param)
         length = dx * dx + dy * dy
         return (dx * ddy + dy * ddx) / (length**1.5)
-
-    @property
-    def angular_velocity(self):
-        return self.curvature * self.velocity
-
-    @property
-    def state(self):
-        return state.State(self.x, self.y,self.heading,
-                           self.velocity, self.acceleration,
-                           self.curvature)
 
 
 def plan_path(state1, state2):
