@@ -177,4 +177,13 @@ class Gui:
 
     @world_map.setter
     def world_map(self, world_map):
-        self._map.polygons = world_map.polygons
+        self._map.polygons = world_map
+
+    @property
+    def path(self):
+        raise AttributeError("Write only!")
+
+    @path.setter
+    def path(self, path):
+        self._map.lines = path
+

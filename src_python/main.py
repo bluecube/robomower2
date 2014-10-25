@@ -3,14 +3,16 @@ import logging
 import logging.config
 import sys
 import util
+import math
 import json_mod
 
 import robonet
 import layer2
-import mock_hw
 
+import mock_hw
 import differential_drive
 import world_map
+import path_planning
 
 import datalogger
 import gui as robotgui
@@ -46,9 +48,15 @@ try:
         proxy = mock_hw.MockHw()
 
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
+    world_map = world_map.WorldMap()
+    path_planning_parameters = path_planning.planning_parameters.PlanningParameters(config["limits"], world_map)
+    path_planner = path_planning.prm.Prm(path_planning_parameters)
+    path = path_planner.plan_path(path_planning.simple_state(0, 0, 0),
+                                  path_planning.simple_state(12, 12, math.radians(210)))
 
-    #gui._map.lines = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
-    gui.world_map = world_map.WorldMap()
+    gui.world_map = world_map.polygons
+    #gui.path = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
+    gui.path = list(path.sample_intervals(0.1))
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]
