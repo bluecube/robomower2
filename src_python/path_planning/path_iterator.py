@@ -1,11 +1,9 @@
-import .state
+from . import state
 
 class PathIterator:
-    @property
-    def travel_time(self):
-        raise NotImplementedError()
-
-
+    """ Base class representing a path.
+    The class itself can be used as state of the current point,
+    advanced by given time, or reset to the beginning of the path."""
 
     def reset(self):
         raise NotImplementedError()
@@ -24,43 +22,3 @@ class PathIterator:
         while True:
             yield self.state
             self.advance(dt)
-
-
-
-    @property
-    def time(self):
-        raise NotImplementedError()
-
-    @property
-    def x(self):
-        raise NotImplementedError()
-
-    @property
-    def y(self):
-        raise NotImplementedError()
-
-    @property
-    def heading(self):
-        raise NotImplementedError()
-
-    @property
-    def velocity(self):
-        raise NotImplementedError()
-
-    @property
-    def acceleration(self):
-        raise NotImplementedError()
-
-    @property
-    def curvature(self):
-        raise NotImplementedError()
-
-    @property
-    def angular_velocity(self):
-        raise NotImplementedError()
-
-    @property
-    def state(self):
-        return state.State(self.x, self.y,self.heading,
-                           self.velocity, self.acceleration,
-                           self.curvature)

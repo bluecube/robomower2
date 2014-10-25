@@ -3,6 +3,7 @@
 import numpy
 import math
 from . import state
+from . import path_iterator
 
 _interpolation_steps = 20
 epsilon = 1e-6

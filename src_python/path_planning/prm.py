@@ -1,17 +1,86 @@
-try:
-    from . import state
-except SystemError:
-    import state
+from . import local_planner
+from . import path_iterator
 
-try:
-    from . import local_planner
-except SystemError:
-    import local_planner
+import collections
+import logging
+
 
 class Prm:
-    """ Probabilistic roadmap """
+    """ General probabilistic roadmap """
 
-    pass
+    Node = collections.namedtuple("Node", ["state", "connections"])
+    Connection = collections.namedtuple("Connection", ["node", "travel_time", "cost"])
+
+    def __init__(self, planning_parameters):
+        self._parameters = planning_parameters
+        self._nodes = []
+
+        self._logger = logging.getLogger(__name__)
+
+        self._build_roadmap()
+
+    def plan_path(self, state1, state2):
+        raise NotImplementedError();
+
+    def _build_roadmap(self):
+        for i in range(500):
+           self._add_state(self._parameters.random_state())
+
+        self._logger.info("Finished building roadmap, %d nodes, %d connections",
+                          len(self._nodes),
+                          self._get_connection_count())
+
+    def _add_state(self, state):
+        print("Adding state " + str(state))
+        cost = self._parameters.state_cost(state)
+
+        if cost is None:
+            print("Nope")
+            return
+
+        node = self.Node(state, [])
+        self._nodes.append(node)
+
+        for other in self._nodes:
+            self._try_connect(node, other)
+            self._try_connect(other, node)
+
+    def _try_connect(self, node1, node2):
+        path = local_planner.plan_path(node1.state, node2.state)
+        if path is None:
+            return
+
+        travel_time = path.travel_time
+        cost = self._path_cost(path)
+
+        if cost is None:
+            return
+
+        node1.connections.append(self.Connection(node2, travel_time, cost))
+
+
+    def _path_cost(self, path_iterator, resolution = 0.1):
+        """ Estimate integral of self._parameters.state_cost over the states on path_iterator. """
+
+        cost = self._parameters.state_cost(path_iterator)
+        if cost is None:
+            # We shouldn't try to connect invalid states, but jerk limit might
+            # get exceeded even in the first state of the path 
+            return None
+        while True:
+            try:
+                path_iterator.advance(resolution)
+            except StopIteration:
+                return cost
+
+            state_cost = self._parameters.state_cost(path_iterator)
+            if state_cost is None:
+                return None
+            else:
+                cost += state_cost
+
+    def _get_connection_count(self):
+        return sum(len(node.connections) for node in self._nodes)
 
 class _PathIterator(path_iterator.PathIterator):
     def __init__(self, states, travel_time):
@@ -31,7 +100,7 @@ class _PathIterator(path_iterator.PathIterator):
     def advance(self, dt):
         self.time += dt
 
-        while dt >= self._sub,travel_time - self._sub.time
+        while dt >= self._sub.travel_time - self._sub.time:
             dt -= self._sub,travel_time - self._sub.time
             self._i += 1
 
