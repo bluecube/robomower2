@@ -3,17 +3,21 @@ from . import path_iterator
 
 import collections
 import logging
+import itertools
 
+import kdtree
 
 class Prm:
     """ General probabilistic roadmap """
+
+    nearest_neighbors = 5
 
     Node = collections.namedtuple("Node", ["state", "connections"])
     Connection = collections.namedtuple("Connection", ["node", "travel_time", "cost"])
 
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
-        self._nodes = []
+        self._nodes = kdtree.KdTree()
 
         self._logger = logging.getLogger(__name__)
 
@@ -24,24 +28,24 @@ class Prm:
 
     def _build_roadmap(self):
         for i in range(500):
-           self._add_state(self._parameters.random_state())
+            print(i)
+            self._add_state(self._parameters.random_state())
 
         self._logger.info("Finished building roadmap, %d nodes, %d connections",
                           len(self._nodes),
                           self._get_connection_count())
 
     def _add_state(self, state):
-        print("Adding state " + str(state))
         cost = self._parameters.state_cost(state)
 
         if cost is None:
-            print("Nope")
             return
 
         node = self.Node(state, [])
-        self._nodes.append(node)
+        self._nodes.insert((state.x, state.y), node)
 
-        for other in self._nodes:
+        for other in itertools.islice(self._nodes.nearest_neighbors((state.x, state.y)),
+                                      self.nearest_neighbors):
             self._try_connect(node, other)
             self._try_connect(other, node)
 
@@ -80,7 +84,7 @@ class Prm:
                 cost += state_cost
 
     def _get_connection_count(self):
-        return sum(len(node.connections) for node in self._nodes)
+        return sum(len(node[1].connections) for node in self._nodes)
 
 class _PathIterator(path_iterator.PathIterator):
     def __init__(self, states, travel_time):
