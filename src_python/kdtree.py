@@ -3,7 +3,7 @@ import math
 class KdTree:
     __slots__ = ("axis", "coord", "left", "right")
 
-    split_threshold = 10
+    split_threshold = 2
 
     def __init__(self):
         self.axis = 0
@@ -17,32 +17,42 @@ class KdTree:
 
         if isinstance(child, self.__class__):
             child.insert(coord, value)
-        elif len(child) < self.split_threshold:
-            child.append((coord, value))
         else:
-            new_node = self.__class__()
-            new_node.build(child)
-            if is_left:
-                self.left = new_node
-            else:
-                self.right = new_node
+            child.append((coord, value))
+
+            if len(child) > self.split_threshold:
+                new_node = self.__class__()
+                new_node.build(child)
+                if is_left:
+                    self.left = new_node
+                else:
+                    self.right = new_node
 
     def nearest_neighbors(self, coord):
-        return (x[1] for x in self._nearest_neighbors(coord))
+        return ((x[1], x[2]) for x in self._nearest_neighbors(self, coord, float("inf")))
 
-    def _nearest_neighbors(self, coord):
-        is_left = coord[self.axis] < self.coord
+    @classmethod
+    def _nearest_neighbors(cls, node, coord, distance_to_edge):
+        if not isinstance(node, cls):
+            yield from sorted((math.hypot(coord[0] - item_coord[0],
+                                          coord[1] - item_coord[1]),
+                               item_coord, value)
+                              for item_coord, value
+                              in node)
+            return
+
+        is_left = coord[node.axis] < node.coord
 
         if is_left:
-            first_child = self.left
-            second_child = self.right
+            first_child = node.left
+            second_child = node.right
         else:
-            first_child = self.right
-            second_child = self.left
+            first_child = node.right
+            second_child = node.left
 
-        distance_to_edge = abs(coord[self.axis] - self.coord)
+        distance_to_edge = min(distance_to_edge, abs(coord[node.axis] - node.coord))
 
-        first_iterator = self._get_nn_iterator(coord, first_child)
+        first_iterator = cls._nearest_neighbors(first_child, coord, distance_to_edge)
         try:
             first_item = next(first_iterator)
 
@@ -51,14 +61,14 @@ class KdTree:
                 first_item = next(first_iterator)
 
         except StopIteration:
-            yield from self._get_nn_iterator(coord, second_child)
+            yield from cls._nearest_neighbors(second_child, coord, distance_to_edge)
             return
 
-
-        second_iterator = self._get_nn_iterator(coord, second_child)
+        second_iterator = cls._nearest_neighbors(second_child, coord, distance_to_edge)
         try:
             second_item = next(second_iterator)
         except StopIteration:
+            yield first_item
             yield from first_iterator
             return
 
@@ -68,6 +78,7 @@ class KdTree:
                 try:
                     first_item = next(first_iterator)
                 except StopIteration:
+                    yield second_item
                     yield from second_iterator
                     return
             else:
@@ -75,19 +86,9 @@ class KdTree:
                 try:
                     second_item = next(second_iterator)
                 except StopIteration:
-                    yield from second_iterator
+                    yield first_item
+                    yield from first_iterator
                     return
-
-    @classmethod
-    def _get_nn_iterator(cls, search_coord, child):
-        if isinstance(child, cls):
-            return child._nearest_neighbors(search_coord)
-        else:
-            x = search_coord[0]
-            y = search_coord[1]
-            return iter(sorted((math.hypot(x - coord[0], y - coord[1]), value)
-                                for coord, value
-                                in child))
 
     def build(self, data):
         min_x = float("inf")
@@ -112,6 +113,7 @@ class KdTree:
             self.axis = 1
 
         # TODO: Don't sort along the same axis twice
+        # TODO: Maybe only approximate median sampling several random nodes.
         sorted_data = sorted(data, key=lambda x: x[0][self.axis])
         split_index = len(data) // 2
 
