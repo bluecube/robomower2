@@ -105,7 +105,7 @@ class _PathIterator(path_iterator.PathIterator):
         self.time += dt
 
         while dt >= self._sub.travel_time - self._sub.time:
-            dt -= self._sub,travel_time - self._sub.time
+            dt -= self._sub.travel_time - self._sub.time
             self._i += 1
 
             if self._i >= len(self._states) - 1:
