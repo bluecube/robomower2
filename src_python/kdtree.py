@@ -143,3 +143,31 @@ class KdTree:
     def __iter__(self):
         yield from self.left
         yield from self.right
+
+    def pprint(self):
+        for line in self._pprint_lines():
+            print(line)
+
+    def _pprint_lines(self, indent = []):
+        yield self._pprint_level_str(indent) + ('x', 'y')[self.axis] + " = " + str(self.coord)
+
+        left_indent = indent + [True]
+        if isinstance(self.left, self.__class__):
+            yield from self.left._pprint_lines(left_indent)
+        else:
+            yield self._pprint_level_str(left_indent) + str(self.left)
+
+        right_indent = indent + [False]
+        if isinstance(self.right, self.__class__):
+            yield from self.right._pprint_lines(right_indent)
+        else:
+            yield self._pprint_level_str(right_indent) + str(self.right)
+
+    @staticmethod
+    def _pprint_level_str(indent):
+        level_str = ''.join((level and '| ' or '  ') for level in indent[:-1])
+
+        if len(indent):
+            level_str += '|-- '
+
+        return level_str
