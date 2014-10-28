@@ -20,12 +20,10 @@ class PlanningParameters:
 
         velocity = state.velocity
         if abs(velocity) > self.max_velocity:
-            print("too large velocity")
             return None
 
         angular_velocity = state.curvature * velocity
         if abs(angular_velocity) > self.max_angular_velocity:
-            print("too large angular velocity")
             return None
 
         try:
@@ -34,7 +32,6 @@ class PlanningParameters:
             pass
         else:
             if abs(jerk) > self.max_jerk:
-                print("too large jerk")
                 return None
 
         radial_acceleration = angular_velocity * velocity
@@ -42,13 +39,11 @@ class PlanningParameters:
                                              radial_acceleration / self.max_radial_acceleration)
 
         if normalized_acceleration > 1:
-            print("too large normalized acceleration")
             return None
 
         # Map collisions:
 
         if self.world_map.has_collision(state.x, state.y):
-            print("map collision")
             return None
 
         return 1
