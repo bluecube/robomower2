@@ -60,12 +60,17 @@ class MapWidget:
 
         # extra lines
         if self.lines is not None:
-            for (x1, y1), (x2, y2) in self.lines:
-                x1, y1 = projection(x1, y1)
-                x2, y2 = projection(x2, y2)
-
-                pygame.draw.line(surface, config.color1_50,
-                                 (x1, y1), (x2, y2))
+            for i, line in enumerate(self.lines):
+                if len(line) == 0:
+                    continue
+                projected = [projection(x, y) for x, y in line]
+                if i == 0:
+                    color = config.color2
+                else:
+                    color = config.color1_50
+                pygame.draw.lines(surface, color, False, projected)
+                #for pos in projected:
+                #    pygame.draw.circle(surface, color, pos, 2, 1)
 
         # Samples
         if len(self.samples) > 0:

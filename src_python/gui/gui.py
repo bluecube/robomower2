@@ -185,5 +185,5 @@ class Gui:
 
     @path.setter
     def path(self, path):
-        self._map.lines = path
+        self._map.lines = [path]
 
