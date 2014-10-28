@@ -1,5 +1,6 @@
 import random
 import math
+import util.halton
 from . import state
 
 class PlanningParameters:
@@ -14,6 +15,7 @@ class PlanningParameters:
         self.max_jerk = limits["jerk"]
         self.max_angular_velocity = limits["angular_velocity"]
         self.world_map = world_map
+        self._halton = util.halton.HaltonSequence(6)
 
     def state_cost(self, state):
         # Dynamic properties:
@@ -49,12 +51,13 @@ class PlanningParameters:
         return 1
 
     def random_state(self):
-        velocity = random.uniform(0, self.max_velocity)
+        val = next(self._halton)
+
+        velocity = self.max_velocity * val[0]
         max_curvature = self.max_angular_velocity / velocity
-        return state.State(random.uniform(0, 20),
-                           random.uniform(0, 20),
-                           random.uniform(0, 2 * math.pi),
+        return state.State(30 * val[1] - 10,
+                           30 * val[2] - 10,
+                           2 * math.pi * val[3],
                            velocity,
-                           random.uniform(-self.max_tangential_acceleration,
-                                          self.max_tangential_acceleration),
-                           random.uniform(-max_curvature, max_curvature))
+                           2 * self.max_tangential_acceleration * val[4] - self.max_tangential_acceleration,
+                           2 * max_curvature * val[5] - max_curvature)
