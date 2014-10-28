@@ -28,13 +28,6 @@ class _PathIterator(path_iterator.PathIterator):
         self._i = 0
         self._last_interpolation_distance = 0
 
-    def jump_to(self, time):
-        if (time > self.time):
-            self.advance(time - self.time)
-        else:
-            self.reset()
-            self.advance(time)
-
     def advance(self, dt):
         self.time += dt
 
@@ -43,6 +36,7 @@ class _PathIterator(path_iterator.PathIterator):
 
         remaining_distance = self._iv(self.time) - self._last_interpolation_distance
 
+        self._curve_param = 1 # This value is used when self.time == self.travel_time
         for s in self._interpolation_table[self._i:]:
             if remaining_distance < s:
                 self._curve_param = (self._i / _interpolation_steps) + (remaining_distance / (_interpolation_steps * s))
@@ -146,6 +140,8 @@ def plan_path(state1, state2):
     c = -12 * length
 
     if abs(a) < epsilon:
+        if abs(b) < epsilon:
+            return None
         travel_time = -c / b
     else:
         D = b * b - 4 * a * c
