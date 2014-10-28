@@ -14,11 +14,14 @@ def iterator_test():
         x = random.uniform(0, 100)
         y = random.uniform(0, 100)
         tree.insert((x, y), i)
+        assert_equal(len(tree), i + 1)
 
+    assert_equal(len(tree), count)
     assert_equal(sorted(value for coord, value in tree), list(range(count)))
 
     tree.rebuild()
 
+    assert_equal(len(tree), count)
     assert_equal(sorted(value for coord, value in tree), list(range(count)))
 
 def check_sequence_increasing(seq):
