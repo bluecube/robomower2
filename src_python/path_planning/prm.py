@@ -1,35 +1,124 @@
 from . import local_planner
 from . import path_iterator
 
-import collections
 import logging
-import itertools
+import heapq
+import collections
+import math
+import random
 
 import kdtree
 
-class Prm:
-    """ General probabilistic roadmap """
+class _Node:
+    __slots__ = ("state", "connections", "pf_index", "travel_time", "cost", "previous")
 
-    nearest_neighbors = 5
-
-    Node = collections.namedtuple("Node", ["state", "connections"])
     Connection = collections.namedtuple("Connection", ["node", "travel_time", "cost"])
+
+    def __init__(self, state):
+        self.state = state
+        self.connections = []
+        self.pf_index = -1
+        self.previous = None
+
+    def add_connection(self, node, travel_time, cost):
+        self.connections.append(self.Connection(node, travel_time, cost))
+
+class Prm:
+    """ Probabilistic roadmap """
+
+    min_connection_count = 5
+    max_connection_count = 50
+    roadmap_nodes = 1000
 
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
         self._nodes = kdtree.KdTree()
+        self._pf_index = 0
 
         self._logger = logging.getLogger(__name__)
 
         self._build_roadmap()
 
     def plan_path(self, state1, state2):
-        raise NotImplementedError();
+        node1 = self._add_state(state1)
+        if node1 is None:
+            raise Exception("Starting position is unreachable")
+        node2 = self._add_state(state2)
+        if node2 is None:
+            raise Exception("Target position is unreachable")
+
+        node_sequence = self._a_star(node1, node2)
+        if node_sequence is None:
+            return None
+
+        return _PathIterator([node.state for node in node_sequence],
+                             node2.travel_time)
+
+    def _a_star(self, start, target):
+        def dist_to_target(node):
+            path = local_planner.plan_path(node.state, target.state)
+            if path is None:
+                return math.hypot(node.state.x - target.state.x,
+                                  node.state.y - target.state.y)
+            else:
+                return path.travel_time
+
+        self._pf_index += 1
+
+        waiting = [(dist_to_target(start), start)]
+        start.previous = None
+        start.travel_time = 0
+        start.cost = 0
+        start.pf_index = self._pf_index
+
+        while len(waiting):
+            _, node = heapq.heappop(waiting)
+
+            if node == target:
+                ret = []
+                while node is not None:
+                    ret.append(node)
+                    node = node.previous
+                return reversed(ret)
+
+            for child, travel_time, cost in node.connections:
+                if child.pf_index == self._pf_index:
+                    continue
+                child.previous = node
+                child.travel_time = node.travel_time + travel_time
+                child.cost = node.cost + cost
+                child.pf_index = self._pf_index
+
+                heuristic_cost = child.cost + dist_to_target(child)
+
+                heapq.heappush(waiting, (heuristic_cost, child))
+
+        return None
 
     def _build_roadmap(self):
-        for i in range(500):
-            print(i)
-            self._add_state(self._parameters.random_state())
+        random.seed(0)
+        for i in range(self.roadmap_nodes):
+            node = _Node(self._parameters.random_state())
+            if self._parameters.state_cost(node.state) is None:
+                continue
+
+            self._nodes.insert((node.state.x, node.state.y), node)
+
+        self._nodes.rebuild()
+
+        for pos, node in self._nodes:
+            attempts = 0
+            for _, other in self._nodes.nearest_neighbors(pos):
+
+                if other is node:
+                    continue
+
+                self._try_connect(node, other)
+                attempts += 1
+
+                if len(node.connections) > self.min_connection_count or \
+                   attempts > self.max_connection_count:
+                    break
 
         self._logger.info("Finished building roadmap, %d nodes, %d connections",
                           len(self._nodes),
@@ -39,38 +128,48 @@ class Prm:
         cost = self._parameters.state_cost(state)
 
         if cost is None:
-            return
+            return None
 
-        node = self.Node(state, [])
-        self._nodes.insert((state.x, state.y), node)
+        node = _Node(state)
 
-        for other in itertools.islice(self._nodes.nearest_neighbors((state.x, state.y)),
-                                      self.nearest_neighbors):
+        # TODO: Don't add node if it is already in the roadmap
+
+        attempts = 0
+        for _, other in self._nodes.nearest_neighbors((state.x, state.y)):
             self._try_connect(node, other)
             self._try_connect(other, node)
+            attempts += 1
+
+            if len(node.connections) > self.min_connection_count or \
+               attempts > self.max_connection_count:
+                break
+
+        self._nodes.insert((state.x, state.y), node)
+        return node
 
     def _try_connect(self, node1, node2):
         path = local_planner.plan_path(node1.state, node2.state)
         if path is None:
-            return
+            return False
 
         travel_time = path.travel_time
         cost = self._path_cost(path)
 
         if cost is None:
-            return
+            return False
 
-        node1.connections.append(self.Connection(node2, travel_time, cost))
-
+        node1.add_connection(node2, travel_time, cost)
+        return True
 
     def _path_cost(self, path_iterator, resolution = 0.1):
         """ Estimate integral of self._parameters.state_cost over the states on path_iterator. """
 
+        # TODO: Maybe don't check points one by one, instead try midpoint, quarter points, ....
+
         cost = self._parameters.state_cost(path_iterator)
         if cost is None:
-            # We shouldn't try to connect invalid states, but jerk limit might
-            # get exceeded even in the first state of the path 
             return None
+
         while True:
             try:
                 path_iterator.advance(resolution)
@@ -92,6 +191,7 @@ class _PathIterator(path_iterator.PathIterator):
             raise ValueError("There must be at least two states.")
         self._states = states
         self.travel_time = travel_time
+        super().__init__()
 
     def reset(self):
         self.time = 0
@@ -99,7 +199,8 @@ class _PathIterator(path_iterator.PathIterator):
         self._load_sub()
 
     def _load_sub(self):
-        self._sub = local_planner.plan_path(states[self._i], states[self._i + 1])
+        self._sub = local_planner.plan_path(self._states[self._i],
+                                            self._states[self._i + 1])
 
     def advance(self, dt):
         self.time += dt

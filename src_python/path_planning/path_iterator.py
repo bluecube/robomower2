@@ -5,6 +5,9 @@ class PathIterator:
     The class itself can be used as state of the current point,
     advanced by given time, or reset to the beginning of the path."""
 
+    def __init__(self):
+        self.reset()
+
     def reset(self):
         raise NotImplementedError()
 
@@ -19,6 +22,12 @@ class PathIterator:
         raise NotImplementedError()
 
     def sample_intervals(self, dt):
+        self.reset()
         while True:
-            yield self.state
-            self.advance(dt)
+            yield (self.x, self.y)
+            try:
+                self.advance(dt)
+            except StopIteration:
+                self.jump_to(self.travel_time)
+                break
+        yield (self.x, self.y)

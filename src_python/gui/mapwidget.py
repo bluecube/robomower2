@@ -60,11 +60,11 @@ class MapWidget:
 
         # extra lines
         if self.lines is not None:
-            for i, line in enumerate(self.lines):
+            for i, line in enumerate(reversed(self.lines)):
                 if len(line) == 0:
                     continue
                 projected = [projection(x, y) for x, y in line]
-                if i == 0:
+                if i == len(self.lines) - 1:
                     color = config.color2
                 else:
                     color = config.color1_50

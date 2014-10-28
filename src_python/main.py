@@ -52,11 +52,22 @@ try:
     path_planning_parameters = path_planning.planning_parameters.PlanningParameters(config["limits"], world_map)
     path_planner = path_planning.prm.Prm(path_planning_parameters)
     path = path_planner.plan_path(path_planning.simple_state(0, 0, 0),
-                                  path_planning.simple_state(12, 12, math.radians(210)))
+                                  #path_planning.simple_state(12, 12, math.radians(90)))
+                                  path_planning.simple_state(12, 15, math.radians(90)))
 
     gui.world_map = world_map.polygons
     #gui.path = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
-    gui.path = list(path.sample_intervals(0.1))
+    if path is not None:
+        gui.path = list(path.sample_intervals(1))
+    else:
+        logger.info("Path not found")
+        gui.path = []
+
+    #for _, node in path_planner._nodes:
+    #    for child, travel_time, cost in node.connections:
+    #        p = path_planning.local_planner.plan_path(node.state, child.state)
+    #        assert p is not None
+    #        gui._map.lines.append(list(p.sample_intervals(1)))
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]
