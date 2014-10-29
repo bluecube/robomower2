@@ -27,8 +27,8 @@ class Prm:
     """ Probabilistic roadmap """
 
     min_connection_count = 5
-    max_connection_count = 50
-    roadmap_nodes = 1000
+    max_connection_count = 20
+    roadmap_nodes = 200
 
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
@@ -98,7 +98,7 @@ class Prm:
     def _build_roadmap(self):
         random.seed(0)
         for i in range(self.roadmap_nodes):
-            if i % 100 == 0:
+            if i % 50 == 0:
                 self._logger.info("Adding roadmap nodes: %d/%d", i, self.roadmap_nodes)
 
             node = _Node(self._parameters.random_state())
@@ -112,9 +112,9 @@ class Prm:
         count = len(self._nodes)
 
         for i, (pos, node) in enumerate(self._nodes):
-            if i % 100 == 0:
+            if i % 50 == 0:
                 self._logger.info("Connecting roadmap nodes: %d/%d", i, count)
-            self._try_connect(node)
+            self._try_connect(node, False)
 
         self._logger.info("Finished building roadmap, %d nodes, %d connections",
                           count, self._get_connection_count())
@@ -133,14 +133,15 @@ class Prm:
         self._nodes.insert((state.x, state.y), node)
         return node
 
-    def _try_connect(self, node):
+    def _try_connect(self, node, do_reverse = True):
         attempts = 0
         for _, other in self._nodes.nearest_neighbors((node.state.x, node.state.y)):
             if other is node:
                 continue # Don't connect node to itself
 
             self._try_connect_pair(node, other)
-            self._try_connect_pair(other, node)
+            if do_reverse:
+                self._try_connect_pair(other, node)
 
             attempts += 1
 
