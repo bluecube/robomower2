@@ -1,39 +1,46 @@
 ---
-title: Path Planning Notes
+title: Path Planning
 layout: default
 ---
 
-Here I'm putting stuff together for planning path of the robot locally (disregarding any
-obstacles).
-The goal is to have limited velocity, angular velocity, acceleration and jerk.
+The goal of the path planner is to be fast, and output paths with have limited
+velocity, angular velocity, acceleration and jerk.
+Additionally we also want to discourage paths that would use
+[low wheel speed]({{ site.baseurl }}/motor-control.html#moral-of-the-story).
 
-## Architecture
+## State
 
-- Robot state $$(x, y, \phi, v, \omega, \ldots)$$
-- Control limits (maximal speed, angular speed, acceleration, jerk,
-  [minimal wheel speed]({{ site.baseurl }}/motor-control.html#moral-of-the-story)).
-- [**Probablistic road map**](https://en.wikipedia.org/wiki/Probabilistic_roadmap).
-- **Local planner** tries to connect two states in the path plan with some
-  simple curve.
-  Output of the local planner is checked if it doesn't exceed control limits,
-  if it does, the path is not used.
+Robot state is represented by its position, orientation, velocity, acceleration
+and track curvature.
 
-## Local Planner Notes
+## Local Planner
 
-[Currently]({{ site.repository_master }}/src_python/path_planning/local_planner.py)
-the local planner calculates two polynomials of degree 3 for x and y coordinates.
-The conditions are starting and ending position and derivation.
+Local planner's job is to find a reasonable connections between two pairs of states
+without paying attention to map collisions or any of the dynamics limitations.
 
-After that, the curve length is calculated by approximating it with polyline,
-and driving time is calculated so that starting and ending velocities and accelerations
-match the input states.
+It works by first finding a path based only on the positions, orientations and curvatures
+of the endpoint states.
+This path is calculated as two degree 6 polynommials.
 
-Then the limits are checked.
-for velocity and angular acceleration the whole polynomial
-has to be within limits (checked on the end points and in the roots of first derivation),
-for angular velocity and acceleration, the limits are checked only in several regularly
-points, reuglarly spaced through the travel time.
+To simplify the conditions for these polynomials, we calculate the length of
+second derivations $$\sqrt{(\frac{\partial x}{\partial t})^2, (\frac{\partial x}{\partial t})^2}$$
+to a known value.
 
-TODO: When selecting the X and Y polynomials, start and end curvature are not specified ->
-it would be discontinuous when connecting the local paths.
-I'll have to use degree 4 polynomials and put curvature into the robot state.
+The method to find this value was experimentlaly selected to be
+an arithmetic average of distance between the endpoints (in meters) and velocity
+in endpoints (in meters / second).
+
+Once the paht is known, we calculate its length, travel time (based on endpoint velocities
+and accelerations) and a polynomial that controls the velocity.
+
+The Path iterator structure that is used to represent the resulting path is indexed in seconds,
+which means that we have to convert between the time and curve parameter for the path
+polynomials.
+This is done in two steps.
+First we use the integral of velocity polynomial to obtain distance at given time.
+For the second step we store distances at regular intervals of curve parameter and
+interpolate.
+
+## Probabilistic Roadmap
+
+![Drunken pathfinder]({{ site.baseurl }}/img/2014-10/drunken-pathfinder.png)
