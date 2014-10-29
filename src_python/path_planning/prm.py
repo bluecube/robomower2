@@ -98,6 +98,9 @@ class Prm:
     def _build_roadmap(self):
         random.seed(0)
         for i in range(self.roadmap_nodes):
+            if i % 100 == 0:
+                self._logger.info("Adding roadmap nodes: %d/%d", i, self.roadmap_nodes)
+
             node = _Node(self._parameters.random_state())
             if self._parameters.state_cost(node.state) is None:
                 continue
@@ -106,23 +109,15 @@ class Prm:
 
         self._nodes.rebuild()
 
-        for pos, node in self._nodes:
-            attempts = 0
-            for _, other in self._nodes.nearest_neighbors(pos):
+        count = len(self._nodes)
 
-                if other is node:
-                    continue
-
-                self._try_connect(node, other)
-                attempts += 1
-
-                if len(node.connections) > self.min_connection_count or \
-                   attempts > self.max_connection_count:
-                    break
+        for i, (pos, node) in enumerate(self._nodes):
+            if i % 100 == 0:
+                self._logger.info("Connecting roadmap nodes: %d/%d", i, count)
+            self._try_connect(node)
 
         self._logger.info("Finished building roadmap, %d nodes, %d connections",
-                          len(self._nodes),
-                          self._get_connection_count())
+                          count, self._get_connection_count())
 
     def _add_state(self, state):
         cost = self._parameters.state_cost(state)
@@ -134,20 +129,26 @@ class Prm:
 
         # TODO: Don't add node if it is already in the roadmap
 
+        self._try_connect(node)
+        self._nodes.insert((state.x, state.y), node)
+        return node
+
+    def _try_connect(self, node):
         attempts = 0
-        for _, other in self._nodes.nearest_neighbors((state.x, state.y)):
-            self._try_connect(node, other)
-            self._try_connect(other, node)
+        for _, other in self._nodes.nearest_neighbors((node.state.x, node.state.y)):
+            if other is node:
+                continue # Don't connect node to itself
+
+            self._try_connect_pair(node, other)
+            self._try_connect_pair(other, node)
+
             attempts += 1
 
             if len(node.connections) > self.min_connection_count or \
                attempts > self.max_connection_count:
                 break
 
-        self._nodes.insert((state.x, state.y), node)
-        return node
-
-    def _try_connect(self, node1, node2):
+    def _try_connect_pair(self, node1, node2):
         path = local_planner.plan_path(node1.state, node2.state)
         if path is None:
             return False
@@ -165,6 +166,7 @@ class Prm:
         """ Estimate integral of self._parameters.state_cost over the states on path_iterator. """
 
         # TODO: Maybe don't check points one by one, instead try midpoint, quarter points, ....
+        # Halton sequence?
 
         cost = self._parameters.state_cost(path_iterator)
         if cost is None:
