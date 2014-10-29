@@ -15,7 +15,7 @@ class PlanningParameters:
         self.max_jerk = limits["jerk"]
         self.max_angular_velocity = limits["angular_velocity"]
         self.world_map = world_map
-        self._halton = util.halton.HaltonSequence(6)
+        self._halton = util.halton.HaltonSequence(4)
 
     def state_cost(self, state):
         # Dynamic properties:
@@ -59,5 +59,5 @@ class PlanningParameters:
                            30 * val[2] - 10,
                            2 * math.pi * val[3],
                            velocity,
-                           2 * self.max_tangential_acceleration * val[4] - self.max_tangential_acceleration,
-                           2 * max_curvature * val[5] - max_curvature)
+                           0,
+                           0)
