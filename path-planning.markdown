@@ -13,6 +13,17 @@ Additionally we also want to discourage paths that would use
 Robot state is represented by its position, orientation, velocity, acceleration
 and track curvature.
 
+## Probabilistic Roadmap
+
+As a path planner we use Probabilistic Roadmap.
+This planner was selected, because it is capable of capturing all of the dynamics
+requirements (at the cost of large number of large number of nodes in the roadmap.
+
+This part is currently work in progress.
+
+- We are using Halton sequences to generate the random waypoints.
+- We limit the waypoints to have zero acceleration and curvature to reduce the dimensionality.
+
 ## Local Planner
 
 Local planner's job is to find a reasonable connections between two pairs of states
@@ -23,11 +34,11 @@ of the endpoint states.
 This path is calculated as two degree 6 polynommials.
 
 To simplify the conditions for these polynomials, we calculate the length of
-second derivations $$\sqrt{(\frac{\partial x}{\partial t})^2, (\frac{\partial x}{\partial t})^2}$$
-to a known value.
+derivations at the endpoints to a known value:
 
-The method to find this value was experimentlaly selected to be
-an arithmetic average of distance between the endpoints (in meters) and velocity
+$$\sqrt{(\frac{\partial x}{\partial t}(0))^2, (\frac{\partial x}{\partial t}(0))^2} = \frac{v(0) + \sqrt{(x(1) - x(0))^2 + (y(1) - y(0))^2}}{2}$$
+
+The value was experimentlaly selected to be an arithmetic average of distance between the endpoints (in meters) and velocity
 in endpoints (in meters / second).
 
 Once the paht is known, we calculate its length, travel time (based on endpoint velocities
@@ -41,6 +52,21 @@ First we use the integral of velocity polynomial to obtain distance at given tim
 For the second step we store distances at regular intervals of curve parameter and
 interpolate.
 
-## Probabilistic Roadmap
+The local planner described in this section is implemented as a fairly general
+[module]({{ site.repository_master }}/src_python/path_planning/local_planner.py) in the
+repository, stateless and knowing nothing about the robot.
+
+To be useable in the PRM planner, it needs collision checking added.
+This functionality is implemented in a module called
+[planning_parameters]({{ site.repository_master }}/src_python/path_planning/planning_parameters.py).
+Planning parameters represent all of the path planner's knowledge about the robot and its
+environment.
+It provides a method to draw random samples on the map, and to calculate cost of being
+in a state (which is infinite for colliding states).
+
+As a final step, the notions of local path and state cost need to be combined to
+determine whether a whole path is passable and what is its cost.
+This is done in a method [_path_cost]({{ site.repository_master }}/src_python/path_planning/prm.py#L166)
+of the PRM module.
 
 ![Drunken pathfinder]({{ site.baseurl }}/img/2014-10/drunken-pathfinder.png)
