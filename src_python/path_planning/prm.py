@@ -5,7 +5,7 @@ import logging
 import heapq
 import collections
 import math
-import random
+import itertools
 
 import kdtree
 
@@ -26,8 +26,9 @@ class _Node:
 class Prm:
     """ Probabilistic roadmap """
 
-    min_connection_count = 5
-    max_connection_count = 20
+    max_neighbors = 20
+    neighbors_examined = 3 * max_neighbors
+    maxdist = 30
     roadmap_nodes = 200
 
     def __init__(self, planning_parameters):
@@ -96,28 +97,15 @@ class Prm:
         return None
 
     def _build_roadmap(self):
-        random.seed(0)
         for i in range(self.roadmap_nodes):
             if i % 50 == 0:
                 self._logger.info("Adding roadmap nodes: %d/%d", i, self.roadmap_nodes)
-
-            node = _Node(self._parameters.random_state())
-            if self._parameters.state_cost(node.state) is None:
-                continue
-
-            self._nodes.insert((node.state.x, node.state.y), node)
+            self._add_state(self._parameters.random_state())
 
         self._nodes.rebuild()
 
-        count = len(self._nodes)
-
-        for i, (pos, node) in enumerate(self._nodes):
-            if i % 50 == 0:
-                self._logger.info("Connecting roadmap nodes: %d/%d", i, count)
-            self._try_connect(node, False)
-
         self._logger.info("Finished building roadmap, %d nodes, %d connections",
-                          count, self._get_connection_count())
+                          len(self._nodes), self._get_connection_count())
 
     def _add_state(self, state):
         cost = self._parameters.state_cost(state)
@@ -129,39 +117,44 @@ class Prm:
 
         # TODO: Don't add node if it is already in the roadmap
 
-        self._try_connect(node)
+        forward_neighbors = []
+        backward_neighbors = []
+
+        for _, neighbor in itertools.islice(self._nodes.nearest_neighbors((state.x, state.y)),
+                                         self.neighbors_examined):
+            path = local_planner.plan_path(state, neighbor.state)
+            if path is not None and path.travel_time < self.maxdist:
+                forward_neighbors.append((path.travel_time, neighbor))
+
+            path = local_planner.plan_path(neighbor.state, state)
+            if path is not None and path.travel_time < self.maxdist:
+                backward_neighbors.append((path.travel_time, neighbor))
+
+        forward_neighbors.sort()
+        backward_neighbors.sort()
+
+        for distance, neighbor in forward_neighbors[:self.max_neighbors]:
+            self._maybe_connect(node, neighbor)
+
+        for distance, neighbor in backward_neighbors[:self.max_neighbors]:
+            self._maybe_connect(neighbor, node)
+
         self._nodes.insert((state.x, state.y), node)
         return node
 
-    def _try_connect(self, node, do_reverse = True):
-        attempts = 0
-        for _, other in self._nodes.nearest_neighbors((node.state.x, node.state.y)):
-            if other is node:
-                continue # Don't connect node to itself
+    def _maybe_connect(self, node1, node2):
+        #if self._a_star(node1, node2) is not None:
+        #    # If there is already a path, we don't need to add another edge
+        #    return
 
-            self._try_connect_pair(node, other)
-            if do_reverse:
-                self._try_connect_pair(other, node)
-
-            attempts += 1
-
-            if len(node.connections) > self.min_connection_count or \
-               attempts > self.max_connection_count:
-                break
-
-    def _try_connect_pair(self, node1, node2):
         path = local_planner.plan_path(node1.state, node2.state)
-        if path is None:
-            return False
+        assert path is not None
 
-        travel_time = path.travel_time
         cost = self._path_cost(path)
-
         if cost is None:
-            return False
+            return
 
-        node1.add_connection(node2, travel_time, cost)
-        return True
+        node1.add_connection(node2, path.travel_time, cost)
 
     def _path_cost(self, path_iterator, resolution = 0.1):
         """ Estimate integral of self._parameters.state_cost over the states on path_iterator. """

@@ -59,15 +59,16 @@ try:
     #gui.path = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
     if path is not None:
         gui.path = list(path.sample_intervals(1))
+        logger.info("Path length: %d s", path.travel_time)
     else:
         logger.info("Path not found")
         gui.path = []
 
-    for _, node in path_planner._nodes:
-        for child, travel_time, cost in node.connections:
-            p = path_planning.local_planner.plan_path(node.state, child.state)
-            assert p is not None
-            gui._map.lines.append(list(p.sample_intervals(1)))
+    #for _, node in path_planner._nodes:
+    #    for child, travel_time, cost in node.connections:
+    #        p = path_planning.local_planner.plan_path(node.state, child.state)
+    #        assert p is not None
+    #        gui._map.lines.append(list(p.sample_intervals(1)))
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]

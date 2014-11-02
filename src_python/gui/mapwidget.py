@@ -69,8 +69,8 @@ class MapWidget:
                 else:
                     color = config.color1_50
                 pygame.draw.lines(surface, color, False, projected)
-                #for pos in projected:
-                #    pygame.draw.circle(surface, color, pos, 2, 1)
+                for pos in projected:
+                    pygame.draw.circle(surface, color, pos, 2, 1)
 
         # Samples
         if len(self.samples) > 0:
