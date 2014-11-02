@@ -36,7 +36,7 @@ This path is calculated as two degree 6 polynommials.
 To simplify the conditions for these polynomials, we calculate the length of
 derivations at the endpoints to a known value:
 
-$$\sqrt{(\frac{\partial x}{\partial t}(0))^2, (\frac{\partial x}{\partial t}(0))^2} = \frac{v(0) + \sqrt{(x(1) - x(0))^2 + (y(1) - y(0))^2}}{2}$$
+$$\sqrt{(\frac{\partial x}{\partial t}(0))^2 + (\frac{\partial x}{\partial t}(0))^2} = \frac{v(0) + \sqrt{(x(1) - x(0))^2 + (y(1) - y(0))^2}}{2}$$
 
 The value was experimentlaly selected to be an arithmetic average of distance between the endpoints (in meters) and velocity
 in endpoints (in meters / second).
