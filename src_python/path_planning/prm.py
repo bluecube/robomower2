@@ -5,6 +5,7 @@ import logging
 import heapq
 import collections
 import math
+import random
 import itertools
 
 import kdtree
@@ -26,10 +27,11 @@ class _Node:
 class Prm:
     """ Probabilistic roadmap """
 
-    max_neighbors = 20
-    neighbors_examined = 3 * max_neighbors
-    maxdist = 30
-    roadmap_nodes = 200
+    max_neighbors = 10
+    neighbors_examined = 5 * max_neighbors
+    maxdist = 10
+    roadmap_nodes = 500
+    smoothing_tries = 20
 
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
@@ -51,6 +53,8 @@ class Prm:
         node_sequence = self._a_star(node1, node2)
         if node_sequence is None:
             return None
+
+        node_sequence = self._path_smoothing(list(node_sequence))
 
         return _PathIterator([node.state for node in node_sequence],
                              node2.travel_time)
@@ -180,6 +184,46 @@ class Prm:
 
     def _get_connection_count(self):
         return sum(len(node[1].connections) for node in self._nodes)
+
+    def _path_smoothing(self, node_sequence):
+        costs = []
+        print(len(node_sequence))
+        for i, (node1, node2) in enumerate(zip(node_sequence[:-1], node_sequence[1:])):
+            for connection in node1.connections:
+                if connection.node == node2:
+                    costs.append(connection.cost)
+                    break
+            print(len(costs))
+            assert len(costs) == i + 1
+        assert len(costs) == len(node_sequence) - 1
+
+        for i in range(self.smoothing_tries):
+            k = random.randrange(len(node_sequence))
+            l = random.randrange(len(node_sequence))
+            if k == l:
+                continue
+
+            node1 = node_sequence[k]
+            node2 = node_sequence[l]
+
+            path = local_planner.plan_path(node1.state, node2.state)
+            if path is None:
+                continue
+            cost = self._path_cost(path)
+            if cost is None:
+                continue
+
+            if cost >= sum(costs[k:l+1]):
+                continue
+
+            # Now we have a local path that is shorter than what the planner found
+            # Replace it
+
+            node_sequence = node_sequence[:k + 1] + node_sequence[l:]
+            costs = costs[:k] + [cost] + costs[l:]
+            assert len(costs) == len(node_sequence) - 1
+        return node_sequence
+
 
 class _PathIterator(path_iterator.PathIterator):
     def __init__(self, states, travel_time):
