@@ -39,6 +39,10 @@ def check_path(state1, state2):
 
 def test():
     check_path(State(0, 0, 0, 1, 0, 0),
+               State(1, 0, 0, 1, 0, 0))
+    check_path(State(0, 0, 0, 1, 0, 0),
                State(1, 5, 0, 1, 0, 0))
     check_path(State(0, 0, 0, 1, 0, 0),
                State(1, 0, 0, 0, 0, 0))
+    check_path(State(0, 0, 0, 1, 0, 0),
+               State(5, 0, 0, 2, 0.7, 1))
