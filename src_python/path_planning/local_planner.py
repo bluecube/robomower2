@@ -49,6 +49,9 @@ class _PathIterator(path_iterator.PathIterator):
                 self._i += 1
                 self._last_interpolation_distance += s
 
+    def finished(self):
+        return self.time >= self.travel_time
+
     # Accessing current state:
 
     # self.time

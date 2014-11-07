@@ -23,11 +23,11 @@ class PathIterator:
 
     def sample_intervals(self, dt):
         self.reset()
-        while True:
+        while not self.finished():
             yield (self.x, self.y)
-            try:
-                self.advance(dt)
-            except StopIteration:
-                self.jump_to(self.travel_time)
-                break
+            self.advance(dt)
         yield (self.x, self.y)
+
+    def finished(self):
+        """ Return True if the path is at the end. """
+        raise NotImplementedError()

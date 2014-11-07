@@ -13,6 +13,7 @@ def check_path(state1, state2):
 
     check_it_equal_to_state(it, state1)
     it.advance(it.travel_time)
+    assert(it.finished())
     check_it_equal_to_state(it, state2)
     it.reset()
     check_it_equal_to_state(it, state1)
@@ -35,6 +36,7 @@ def check_path(state1, state2):
         prev_y = it.y
         prev_v = it.velocity
 
+    assert(it.finished())
     check_it_equal_to_state(it, state2)
 
 def test():

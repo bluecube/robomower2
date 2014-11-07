@@ -170,17 +170,16 @@ class Prm:
         if cost is None:
             return None
 
-        while True:
-            try:
-                path_iterator.advance(resolution)
-            except StopIteration:
-                return cost
+        while not path_iterator.finished():
+            path_iterator.advance(resolution)
 
             state_cost = self._parameters.state_cost(path_iterator)
             if state_cost is None:
                 return None
             else:
                 cost += state_cost
+
+        return cost
 
     def _get_connection_count(self):
         return sum(len(node[1].connections) for node in self._nodes)
@@ -264,6 +263,9 @@ class _PathIterator(path_iterator.PathIterator):
             return
 
         self._sub.advance(dt)
+
+    def finished(self):
+        return self._i == len(self._states) - 1 and self._sub.finished()
 
     def __getattr__(self, key):
         """ The rest of values gets taken from the sub iterator """
