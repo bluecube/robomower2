@@ -32,7 +32,10 @@ class _PathIterator(path_iterator.PathIterator):
         self.time += dt
 
         if self.time > self.travel_time:
-            raise StopIteration()
+            self.time = self.travel_time
+            self._curve_param = 1
+            self._i = len(self._interpolation_table)
+            return
 
         remaining_distance = self._iv(self.time) - self._last_interpolation_distance
 

@@ -250,7 +250,10 @@ class _PathIterator(path_iterator.PathIterator):
             self._i += 1
 
             if self._i >= len(self._states) - 1:
-                raise StopIteration()
+                self._i = len(self._states) - 1
+                self._time = self.travel_time
+                self._sub.jump_to(self._sub.travel_time)
+                return
 
             self._load_sub()
 
