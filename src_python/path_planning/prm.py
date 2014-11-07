@@ -30,7 +30,7 @@ class Prm:
     max_neighbors = 10
     neighbors_examined = 5 * max_neighbors
     maxdist = 10
-    roadmap_nodes = 500
+    roadmap_nodes = 200
     smoothing_tries = 20
 
     def __init__(self, planning_parameters):
