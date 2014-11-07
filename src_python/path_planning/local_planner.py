@@ -158,13 +158,18 @@ def plan_path(state1, state2):
 
     assert(travel_time > 0)
 
+    t = travel_time
+    t2 = t * t
+    t3 = t * t2
+    A = numpy.array([[1, 0,      0,       0], # v(0)
+                     [1, t,     t2,      t3], # v(1)
+                     [0, 1,      0,       0], # diff(v)(0)
+                     [0, 1,  2 * t,  3 * t2]]) # diff(v)(1)
     b = numpy.array([state1.velocity,
                      state2.velocity,
                      state1.acceleration,
                      state2.acceleration])
-    v = numpy.polynomial.Polynomial(numpy.linalg.solve(_A[:4, :4], b),
-                                    domain=(0, travel_time),
-                                    window=(0, 1))
+    v = numpy.polynomial.Polynomial(numpy.linalg.solve(A, b));
 
     it = _PathIterator()
     it.reset()
