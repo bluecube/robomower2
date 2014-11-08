@@ -27,11 +27,10 @@ class _Node:
 class Prm:
     """ Probabilistic roadmap """
 
-    max_neighbors = 10
+    max_neighbors = 80
     neighbors_examined = 5 * max_neighbors
-    maxdist = 10
     roadmap_nodes = 200
-    smoothing_tries = 20
+    smoothing_tries = 50
 
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
@@ -127,11 +126,11 @@ class Prm:
         for _, neighbor in itertools.islice(self._nodes.nearest_neighbors((state.x, state.y)),
                                          self.neighbors_examined):
             path = local_planner.plan_path(state, neighbor.state)
-            if path is not None and path.travel_time < self.maxdist:
+            if path is not None:
                 forward_neighbors.append((path.travel_time, neighbor))
 
             path = local_planner.plan_path(neighbor.state, state)
-            if path is not None and path.travel_time < self.maxdist:
+            if path is not None:
                 backward_neighbors.append((path.travel_time, neighbor))
 
         forward_neighbors.sort()
@@ -186,13 +185,11 @@ class Prm:
 
     def _path_smoothing(self, node_sequence):
         costs = []
-        print(len(node_sequence))
         for i, (node1, node2) in enumerate(zip(node_sequence[:-1], node_sequence[1:])):
             for connection in node1.connections:
                 if connection.node == node2:
                     costs.append(connection.cost)
                     break
-            print(len(costs))
             assert len(costs) == i + 1
         assert len(costs) == len(node_sequence) - 1
 
@@ -200,6 +197,11 @@ class Prm:
             k = random.randrange(len(node_sequence))
             l = random.randrange(len(node_sequence))
             if k == l:
+                continue
+
+            k, l = min(k, l), max(k, l)
+
+            if k + 1 == l:
                 continue
 
             node1 = node_sequence[k]
@@ -212,11 +214,15 @@ class Prm:
             if cost is None:
                 continue
 
-            if cost >= sum(costs[k:l+1]):
+            previous_cost = sum(costs[k:l+1])
+            if cost >= previous_cost:
                 continue
 
             # Now we have a local path that is shorter than what the planner found
             # Replace it
+
+            self._logger.info("Taking shortcut: skipping %i nodes, cost %d -> %d",
+                              l - k - 1, previous_cost, cost)
 
             node_sequence = node_sequence[:k + 1] + node_sequence[l:]
             costs = costs[:k] + [cost] + costs[l:]
