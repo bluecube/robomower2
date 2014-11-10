@@ -31,6 +31,7 @@ class Prm:
     neighbors_examined = 5 * max_neighbors
     roadmap_nodes = 200
     smoothing_tries = 50
+    distance_epsilon = 0.1
 
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
@@ -118,8 +119,6 @@ class Prm:
 
         node = _Node(state)
 
-        # TODO: Don't add node if it is already in the roadmap
-
         forward_neighbors = []
         backward_neighbors = []
 
@@ -128,10 +127,14 @@ class Prm:
             path = local_planner.plan_path(state, neighbor.state)
             if path is not None:
                 forward_neighbors.append((path.travel_time, neighbor))
+                if path.travel_time < self.distance_epsilon:
+                    return neighbor # Close enough node was already in the roadmap
 
             path = local_planner.plan_path(neighbor.state, state)
             if path is not None:
                 backward_neighbors.append((path.travel_time, neighbor))
+                if path.travel_time < self.distance_epsilon:
+                    return neighbor # Close enough node was already in the roadmap
 
         forward_neighbors.sort()
         backward_neighbors.sort()
