@@ -1,6 +1,7 @@
 import random
 import math
 import util.halton
+import differential_drive
 from . import state
 
 class PlanningParameters:
@@ -8,14 +9,16 @@ class PlanningParameters:
     Given configuration dict with limits and a map it calculates a cost of being
     in a path planning state."""
 
-    def __init__(self, limits, world_map):
+    def __init__(self, limits, world_map, drive_model):
         self.max_velocity = limits["velocity"]
         self.max_tangential_acceleration = limits["acceleration"]
         self.max_radial_acceleration = limits["radial_acceleration"]
         self.max_jerk = limits["jerk"]
         self.max_angular_velocity = limits["angular_velocity"]
+        self.min_wheel_speed = limits["min_wheel_speed"]
         self.world_map = world_map
         self._halton = util.halton.HaltonSequence(4)
+        self._drive_model = drive_model
 
     def state_cost(self, state):
         # Dynamic properties:
@@ -40,7 +43,7 @@ class PlanningParameters:
         normalized_acceleration = math.hypot(state.acceleration / self.max_tangential_acceleration,
                                              radial_acceleration / self.max_radial_acceleration)
 
-        if normalized_acceleration > 1:
+        if normalized_acceleration >= 1:
             return None
 
         # Map collisions:
@@ -48,7 +51,14 @@ class PlanningParameters:
         if self.world_map.has_collision(state.x, state.y):
             return None
 
-        return 1
+        cost = 1 / (1 - normalized_acceleration)
+
+        ticks_left, ticks_right = self._drive_model.velocity_to_ticks(velocity, angular_velocity)
+
+        if abs(ticks_left) < self.min_wheel_speed or abs(ticks_right) < self.min_wheel_speed:
+            cost *= 2
+
+        return cost
 
     def random_state(self):
         val = next(self._halton)

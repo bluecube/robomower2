@@ -49,7 +49,9 @@ try:
 
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
     world_map = world_map.WorldMap()
-    path_planning_parameters = path_planning.planning_parameters.PlanningParameters(config["limits"], world_map)
+    path_planning_parameters = path_planning.planning_parameters.PlanningParameters(config["limits"],
+                                                                                    world_map,
+                                                                                    drive.model)
     path_planner = path_planning.prm.Prm(path_planning_parameters)
     path = path_planner.plan_path(path_planning.simple_state(0, 0, 0),
                                   #path_planning.simple_state(12, 12, math.radians(90)))
