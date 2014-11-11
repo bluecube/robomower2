@@ -1,5 +1,6 @@
 from . import local_planner
 from . import path_iterator
+from . import state
 
 import logging
 import heapq
@@ -7,18 +8,23 @@ import collections
 import math
 import random
 import itertools
+import os.path
+import sys
+import gzip
+import struct
 
 import kdtree
 
+
 class _Node:
-    __slots__ = ("state", "connections", "pf_index", "travel_time", "cost", "previous")
+    __slots__ = ("state", "connections", "index", "travel_time", "cost", "previous")
 
     Connection = collections.namedtuple("Connection", ["node", "travel_time", "cost"])
 
     def __init__(self, state):
         self.state = state
         self.connections = []
-        self.pf_index = -1
+        self.index = -1 # Index is a helper field used during path finding and serialization
         self.previous = None
 
     def add_connection(self, node, travel_time, cost):
@@ -27,20 +33,23 @@ class _Node:
 class Prm:
     """ Probabilistic roadmap """
 
-    max_neighbors = 80
+    max_neighbors = 50
     neighbors_examined = 5 * max_neighbors
     roadmap_nodes = 200
     smoothing_tries = 50
     distance_epsilon = 0.1
 
+    _count_struct = struct.Struct("I")
+    _state_struct = struct.Struct("ffffff")
+    _connection_struct = struct.Struct("Iff")
+
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
-        self._nodes = kdtree.KdTree()
         self._pf_index = 0
 
         self._logger = logging.getLogger(__name__)
 
-        self._build_roadmap()
+        self._obtain_roadmap()
 
     def plan_path(self, state1, state2):
         node1 = self._add_state(state1)
@@ -74,7 +83,7 @@ class Prm:
         start.previous = None
         start.travel_time = 0
         start.cost = 0
-        start.pf_index = self._pf_index
+        start.index = self._pf_index
 
         while len(waiting):
             _, node = heapq.heappop(waiting)
@@ -87,12 +96,12 @@ class Prm:
                 return reversed(ret)
 
             for child, travel_time, cost in node.connections:
-                if child.pf_index == self._pf_index:
+                if child.index == self._pf_index:
                     continue
                 child.previous = node
                 child.travel_time = node.travel_time + travel_time
                 child.cost = node.cost + cost
-                child.pf_index = self._pf_index
+                child.index = self._pf_index
 
                 heuristic_cost = child.cost + dist_to_target(child)
 
@@ -100,16 +109,70 @@ class Prm:
 
         return None
 
+
+    def _obtain_roadmap(self):
+        roadmap_file = os.path.join(os.path.dirname(sys.argv[0]), "roadmap.gz")
+
+        self._roadmap = kdtree.KdTree()
+
+        try:
+            self._logger.info("Loading roadmap from file %s", roadmap_file)
+            self._load_roadmap(roadmap_file)
+            return
+        except FileNotFoundError:
+            pass
+
+        self._logger.info("Loading roadmap failed, rebuilding")
+        self._build_roadmap()
+        self._logger.info("Saving roadmap to file %s", roadmap_file)
+        self._save_roadmap(roadmap_file)
+
+    def _load_roadmap(self, roadmap_file):
+        with gzip.open(roadmap_file, "rb") as fp:
+            nodes = []
+            count = self._count_struct.unpack(fp.read(self._count_struct.size))[0]
+            for i in range(count):
+                node = _Node(state.State(*self._state_struct.unpack(fp.read(self._state_struct.size))))
+                nodes.append(node)
+                self._roadmap.insert((node.state.x, node.state.y), node)
+
+            self._roadmap.rebuild()
+
+            for node in nodes:
+                count = self._count_struct.unpack(fp.read(self._count_struct.size))[0]
+                for i in range(count):
+                    index, travel_time, cost = self._connection_struct.unpack(fp.read(self._connection_struct.size))
+                    node.add_connection(nodes[index], travel_time, cost)
+
+
+    def _save_roadmap(self, roadmap_file):
+        # Pickle was running into problems with recursion depth, so we serialize it manually
+        with gzip.open(roadmap_file, "wb") as fp:
+            fp.write(self._count_struct.pack(len(self._roadmap)))
+            for i, (_, node) in enumerate(self._roadmap):
+                node.index = i
+                fp.write(self._state_struct.pack(*node.state))
+
+            for _, node in self._roadmap:
+                fp.write(self._count_struct.pack(len(node.connections)))
+                for connection in node.connections:
+                    fp.write(self._connection_struct.pack(connection.node.index,
+                                                          connection.travel_time,
+                                                          connection.cost))
+
+            for _, node in self._roadmap:
+                node.index = -1
+
     def _build_roadmap(self):
         for i in range(self.roadmap_nodes):
             if i % 50 == 0:
                 self._logger.info("Adding roadmap nodes: %d/%d", i, self.roadmap_nodes)
             self._add_state(self._parameters.random_state())
 
-        self._nodes.rebuild()
+        self._roadmap.rebuild()
 
         self._logger.info("Finished building roadmap, %d nodes, %d connections",
-                          len(self._nodes), self._get_connection_count())
+                          len(self._roadmap), self._get_connection_count())
 
     def _add_state(self, state):
         cost = self._parameters.state_cost(state)
@@ -122,7 +185,7 @@ class Prm:
         forward_neighbors = []
         backward_neighbors = []
 
-        for _, neighbor in itertools.islice(self._nodes.nearest_neighbors((state.x, state.y)),
+        for _, neighbor in itertools.islice(self._roadmap.nearest_neighbors((state.x, state.y)),
                                          self.neighbors_examined):
             path = local_planner.plan_path(state, neighbor.state)
             if path is not None:
@@ -145,7 +208,7 @@ class Prm:
         for distance, neighbor in backward_neighbors[:self.max_neighbors]:
             self._maybe_connect(neighbor, node)
 
-        self._nodes.insert((state.x, state.y), node)
+        self._roadmap.insert((state.x, state.y), node)
         return node
 
     def _maybe_connect(self, node1, node2):
@@ -184,7 +247,7 @@ class Prm:
         return cost
 
     def _get_connection_count(self):
-        return sum(len(node[1].connections) for node in self._nodes)
+        return sum(len(node[1].connections) for node in self._roadmap)
 
     def _path_smoothing(self, node_sequence):
         costs = []
