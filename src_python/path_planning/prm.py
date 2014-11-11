@@ -35,7 +35,7 @@ class Prm:
 
     max_neighbors = 50
     neighbors_examined = 5 * max_neighbors
-    roadmap_nodes = 200
+    roadmap_nodes = 500
     smoothing_tries = 50
     distance_epsilon = 0.1
 
