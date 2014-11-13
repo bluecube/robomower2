@@ -117,14 +117,15 @@ class Prm:
         try:
             self._logger.info("Loading roadmap from file %s", roadmap_file)
             self._load_roadmap(roadmap_file)
-            return
         except FileNotFoundError:
-            pass
+            self._logger.info("Loading roadmap failed, rebuilding")
+            self._build_roadmap()
+            self._logger.info("Saving roadmap to file %s", roadmap_file)
+            self._save_roadmap(roadmap_file)
 
-        self._logger.info("Loading roadmap failed, rebuilding")
-        self._build_roadmap()
-        self._logger.info("Saving roadmap to file %s", roadmap_file)
-        self._save_roadmap(roadmap_file)
+        self._roadmap.rebuild()
+        self._logger.info("Have roadmap with %d nodes and %d connections",
+                          len(self._roadmap), self._get_connection_count())
 
     def _load_roadmap(self, roadmap_file):
         with gzip.open(roadmap_file, "rb") as fp:
@@ -134,8 +135,6 @@ class Prm:
                 node = _Node(state.State(*self._state_struct.unpack(fp.read(self._state_struct.size))))
                 nodes.append(node)
                 self._roadmap.insert((node.state.x, node.state.y), node)
-
-            self._roadmap.rebuild()
 
             for node in nodes:
                 count = self._count_struct.unpack(fp.read(self._count_struct.size))[0]
@@ -169,9 +168,6 @@ class Prm:
             self._add_state(self._parameters.random_state())
 
         self._roadmap.rebuild()
-
-        self._logger.info("Finished building roadmap, %d nodes, %d connections",
-                          len(self._roadmap), self._get_connection_count())
 
     def _add_state(self, state):
         cost = self._parameters.state_cost(state)
