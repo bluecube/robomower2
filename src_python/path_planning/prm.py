@@ -186,15 +186,17 @@ class Prm:
 
         for _, neighbor in itertools.islice(self._roadmap.nearest_neighbors((state.x, state.y)),
                                          self.neighbors_examined):
+            neighbor_cost = self._parameters.state_cost(neighbor.state)
+
             path = local_planner.plan_path(state, neighbor.state)
             if path is not None:
-                forward_neighbors.append((path.travel_time, neighbor))
+                forward_neighbors.append((neighbor_cost * path.travel_time, neighbor))
                 if path.travel_time < self.distance_epsilon:
                     return neighbor # Close enough node was already in the roadmap
 
             path = local_planner.plan_path(neighbor.state, state)
             if path is not None:
-                backward_neighbors.append((path.travel_time, neighbor))
+                backward_neighbors.append((neighbor_cost * path.travel_time, neighbor))
                 if path.travel_time < self.distance_epsilon:
                     return neighbor # Close enough node was already in the roadmap
 
