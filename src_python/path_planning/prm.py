@@ -36,7 +36,6 @@ class Prm:
     max_neighbors = 50
     neighbors_examined = 5 * max_neighbors
     roadmap_nodes = 500
-    smoothing_tries = 50
     distance_epsilon = 0.1
 
     _count_struct = struct.Struct("I")
@@ -259,7 +258,7 @@ class Prm:
             assert len(costs) == i + 1
         assert len(costs) == len(node_sequence) - 1
 
-        for i in range(self.smoothing_tries):
+        for i in range(5 * len(node_sequence)):
             k = random.randrange(len(node_sequence))
             l = random.randrange(len(node_sequence))
             if k == l:
@@ -290,8 +289,8 @@ class Prm:
             self._logger.info("Taking shortcut: skipping %i nodes, cost %d -> %d",
                               l - k - 1, previous_cost, cost)
 
-            node_sequence = node_sequence[:k + 1] + node_sequence[l:]
-            costs = costs[:k] + [cost] + costs[l:]
+            node_sequence = list(node_sequence[:k + 1] + node_sequence[l:])
+            costs = list(costs[:k] + [cost] + costs[l:])
             assert len(costs) == len(node_sequence) - 1
         return node_sequence
 
