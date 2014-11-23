@@ -6,7 +6,7 @@ class GuiController:
     down = pygame.K_s
     right = pygame.K_d
 
-    def __init__(self, gui):
+    def __init__(self, gui, drive):
         lim = gui._config["limits"]
 
         self._max_velocity = lim["velocity"]
@@ -53,10 +53,11 @@ class GuiController:
             elif self._y < 0:
                 self._y = min(0, self._y + self._y_accel * delta_t)
 
-        self.turn = self._max_angular_velocity * self._x * (self._nonlinearity * self._x * self._x +
+        sekf.turn = self._max_angular_velocity * self._x * (self._nonlinearity * self._x * self._x +
                                                             1 - self._nonlinearity);
         self.forward = self._max_velocity * self._y * (self._nonlinearity * self._y * self._y +
                                                        1 - self._nonlinearity);
+        self._drive.set_command(self.forward, self.turn)
 
     def _use_keyboard(self):
         self._joystick = None

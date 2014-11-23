@@ -26,7 +26,7 @@ class Gui:
 
         self.finished = False
 
-        self.controller = controller.GuiController(self);
+        self.controller = None
 
         self._velocity = widgets.Dial("velocity", 0, math.ceil(lim["velocity"] * 12) / 10, "%.1f", "%.2f", "m/s")
         self._load = widgets.Dial("CPU load", 0, 100, "%d", "%d", "%")

@@ -79,8 +79,8 @@ class DifferentialDrive:
 
         self.model = DifferentialDriveModel(config["left_resolution"],
                                             config["right_resolution"],
-                                            config["left_sigma"],
-                                            config["right_sigma"],
+                                            config.get("left_sigma", 0),
+                                            config.get("right_sigma", 0),
                                             config["wheel_base"])
         self.set_pid(**config["PID"])
 
@@ -92,12 +92,13 @@ class DifferentialDrive:
         self.left_proxy.params(kP, kI, kD)
         self.right_proxy.params(kP, kI, kD)
 
-    def update(self, forward, turn):
+    def set_command(self, forward, turn):
         left_command, right_command = self.model.velocity_to_ticks(forward, turn)
 
         self.left_command = int(left_command / self.left_proxy.PID_FREQUENCY)
         self.right_command = int(right_command / self.right_proxy.PID_FREQUENCY)
 
+    def update(self):
         self.left_ticks = self.left_proxy.update(self.left_command)['distance']
         self.right_ticks = self.right_proxy.update(self.right_command)['distance']
 

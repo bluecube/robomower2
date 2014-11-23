@@ -11,8 +11,8 @@ import layer2
 
 import mock_hw
 import differential_drive
-import world_map
-import path_planning
+import world_map as world_map_module
+import controller
 
 import datalogger
 import gui as robotgui
@@ -48,23 +48,9 @@ try:
         proxy = mock_hw.MockHw()
 
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
-    world_map = world_map.WorldMap()
-    path_planning_parameters = path_planning.planning_parameters.PlanningParameters(config["limits"],
-                                                                                    world_map,
-                                                                                    drive.model)
-    path_planner = path_planning.prm.Prm(path_planning_parameters)
-    path = path_planner.plan_path(path_planning.simple_state(0, 0, 0),
-                                  #path_planning.simple_state(12, 12, math.radians(90)))
-                                  path_planning.simple_state(12, 15, math.radians(180)))
 
+    world_map = world_map_module.WorldMap()
     gui.world_map = world_map.polygons
-    #gui.path = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
-    if path is not None:
-        gui.path = list(path.sample_intervals(1))
-        logger.info("Path length: %d s", path.travel_time)
-    else:
-        logger.info("Path not found")
-        gui.path = []
 
     #for _, node in path_planner._nodes:
     #    for child, travel_time, cost in node.connections:
@@ -72,17 +58,25 @@ try:
     #        assert p is not None
     #        gui._map.lines.append(list(p.sample_intervals(1)))
 
-    gui.kP = config["drive"]["PID"]["kP"]
-    gui.kI = config["drive"]["PID"]["kI"]
-    gui.kD = config["drive"]["PID"]["kD"]
-    gui.pid_callback = lambda: drive.set_pid(gui.kP, gui.kI, gui.kD)
-
-    #controller = patterns.Pattern("patterns/square.json", config)
-    controller = gui.controller
+    controller = controller.Controller(drive, world_map, config)
+    #gui_controller = gui.get_controller(drive)
 
     data_logger = datalogger.DataLogger("/tmp")
 
     samples = [Sample() for i in range(1)]
+
+    gui.kP = config["drive"]["PID"]["kP"]
+    gui.kI = config["drive"]["PID"]["kI"]
+    gui.kD = config["drive"]["PID"]["kD"]
+    gui.pid_callback = lambda: drive.set_pid(gui.kP, gui.kI, gui.kD)
+    #gui.path = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
+    if controller._path is not None:
+        gui.path = list(controller._path.sample_intervals(1))
+        controller._path.reset()
+        logger.info("Path length: %d s", controller._path.travel_time)
+    else:
+        logger.info("Path not found")
+        gui.path = []
 
     sleep_timer = util.TimeElapsed()
     while True:
@@ -90,12 +84,7 @@ try:
         delta_t, main_loop_load = sleep_timer.tick(0.1)
 
         controller.update(delta_t)
-
-        drive.update(controller.forward, controller.turn)
-
-        data_logger.write(delta_t,
-                          drive.left_command, drive.right_command,
-                          drive.left_ticks, drive.right_ticks)
+        drive.update()
 
         gui.velocity = drive.forward_distance() / delta_t
         gui.rpm_l = abs(60e-3 * drive.left_ticks / (delta_t * 16))
@@ -107,6 +96,9 @@ try:
         samples = [drive.update_sample(s) for s in samples]
         gui.samples = samples
 
+        data_logger.write(delta_t,
+                          drive.left_command, drive.right_command,
+                          drive.left_ticks, drive.right_ticks)
         if gui.finished:
             break
 
