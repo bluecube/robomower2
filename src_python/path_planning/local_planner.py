@@ -88,7 +88,7 @@ class _PathIterator(path_iterator.PathIterator):
         dy = self._dy(self._curve_param)
         ddy = self._ddy(self._curve_param)
         length = dx * dx + dy * dy
-        return (dx * ddy + dy * ddx) / (length**1.5)
+        return (dx * ddy - dy * ddx) / (length**1.5)
 
 
 def plan_path(state1, state2):
