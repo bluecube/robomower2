@@ -1,5 +1,4 @@
-from path_planning import local_planner
-from path_planning import State
+from path_planning import local_planner, State
 
 import path_planner_util
 
