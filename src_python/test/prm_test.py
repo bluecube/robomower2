@@ -7,7 +7,7 @@ def check_path(states):
     times = [local_planner.plan_path(s1, s2).travel_time
              for s1, s2 in zip(states[:-1], states[1:])]
 
-    it = prm._PathIterator(states, sum(times))
+    it = prm._PathIterator(states)
     path_planner_util.check_it_equal_to_state(it, states[0])
 
     for time, state in zip(times, states[1:]):

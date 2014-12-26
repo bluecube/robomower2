@@ -17,9 +17,9 @@ import kdtree
 
 
 class _Node:
-    __slots__ = ("state", "connections", "index", "travel_time", "cost", "previous")
+    __slots__ = ("state", "connections", "index", "cost", "previous")
 
-    Connection = collections.namedtuple("Connection", ["node", "travel_time", "cost"])
+    Connection = collections.namedtuple("Connection", ["node", "cost"])
 
     def __init__(self, state):
         self.state = state
@@ -27,8 +27,8 @@ class _Node:
         self.index = -1 # Index is a helper field used during path finding and serialization
         self.previous = None
 
-    def add_connection(self, node, travel_time, cost):
-        self.connections.append(self.Connection(node, travel_time, cost))
+    def add_connection(self, node, cost):
+        self.connections.append(self.Connection(node, cost))
 
 class Prm:
     """ Probabilistic roadmap """
@@ -40,7 +40,7 @@ class Prm:
 
     _count_struct = struct.Struct("I")
     _state_struct = struct.Struct("ffffff")
-    _connection_struct = struct.Struct("Iff")
+    _connection_struct = struct.Struct("If")
 
     def __init__(self, planning_parameters):
         self._parameters = planning_parameters
@@ -64,8 +64,7 @@ class Prm:
 
         node_sequence = self._path_smoothing(list(node_sequence))
 
-        return _PathIterator([node.state for node in node_sequence],
-                             node2.travel_time)
+        return _PathIterator([node.state for node in node_sequence])
 
     def _a_star(self, start, target):
         def dist_to_target(node):
@@ -80,7 +79,6 @@ class Prm:
 
         waiting = [(dist_to_target(start), start)]
         start.previous = None
-        start.travel_time = 0
         start.cost = 0
         start.index = self._pf_index
 
@@ -94,11 +92,10 @@ class Prm:
                     node = node.previous
                 return reversed(ret)
 
-            for child, travel_time, cost in node.connections:
+            for child, cost in node.connections:
                 if child.index == self._pf_index:
                     continue
                 child.previous = node
-                child.travel_time = node.travel_time + travel_time
                 child.cost = node.cost + cost
                 child.index = self._pf_index
 
@@ -139,8 +136,8 @@ class Prm:
             for node in nodes:
                 count = self._count_struct.unpack(fp.read(self._count_struct.size))[0]
                 for i in range(count):
-                    index, travel_time, cost = self._connection_struct.unpack(fp.read(self._connection_struct.size))
-                    node.add_connection(nodes[index], travel_time, cost)
+                    index, cost = self._connection_struct.unpack(fp.read(self._connection_struct.size))
+                    node.add_connection(nodes[index], cost)
 
 
     def _save_roadmap(self, roadmap_file):
@@ -155,7 +152,6 @@ class Prm:
                 fp.write(self._count_struct.pack(len(node.connections)))
                 for connection in node.connections:
                     fp.write(self._connection_struct.pack(connection.node.index,
-                                                          connection.travel_time,
                                                           connection.cost))
 
             for _, node in self._roadmap:
@@ -220,7 +216,7 @@ class Prm:
         if cost is None:
             return
 
-        node1.add_connection(node2, path.travel_time, cost)
+        node1.add_connection(node2, cost)
 
     def _path_cost(self, path_iterator, resolution = 0.1):
         """ Estimate integral of self._parameters.state_cost over the states on path_iterator. """
@@ -294,11 +290,13 @@ class Prm:
 
 
 class _PathIterator(path_iterator.PathIterator):
-    def __init__(self, states, travel_time):
+    def __init__(self, states):
         if len(states) < 2:
             raise ValueError("There must be at least two states.")
         self._states = states
-        self.travel_time = travel_time
+        self.travel_time = sum(local_planner.plan_path(s1, s2).travel_time
+                               for s1, s2
+                               in zip(states[:-1], states[1:]))
         super().__init__()
 
     def reset(self):
