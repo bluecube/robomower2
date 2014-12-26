@@ -187,3 +187,11 @@ class Gui:
     def path(self, path):
         self._map.lines = [path]
 
+    @property
+    def target():
+        raise AttributeError("Write only!")
+
+    @target.setter
+    def target(self, state):
+        if state is not None:
+            self._map.offset = (-state.x, -state.y)

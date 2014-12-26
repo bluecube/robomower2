@@ -32,3 +32,7 @@ class Controller:
                 self.forward = self._path.velocity
                 self.turn = self.forward * self._path.curvature
         self._drive.set_command(self.forward, self.turn)
+
+    @property
+    def intended_state(self):
+        return self._path

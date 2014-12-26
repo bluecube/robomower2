@@ -90,6 +90,7 @@ try:
         gui.rpm_l = abs(60e-3 * drive.left_ticks / (delta_t * 16))
         gui.rpm_r = abs(60e-3 * drive.right_ticks / (delta_t * 16))
         gui.controller = controller
+        gui.target = controller.intended_state
         gui.load = main_loop_load
         gui.update()
 
