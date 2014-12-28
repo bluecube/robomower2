@@ -83,7 +83,7 @@ try:
         proxy.broadcast.latch_values()
         delta_t, main_loop_load = sleep_timer.tick(0.1)
 
-        controller.update(delta_t)
+        controller.update(samples[0], delta_t)
         drive.update()
 
         gui.velocity = drive.forward_distance() / delta_t
