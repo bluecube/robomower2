@@ -12,6 +12,7 @@ Stuff remaining to do, roughly in order.
 - More sensors (compass!)
 - Advanced GPS
 - [Path planning]({{ site.baseurl }}/path-planning.html) - DONE, but needs review
+- Make a smarter version of the current [12V electronics]({{ site.baseurl }}/electronics.html) ?????
 
 ## Finished
 
