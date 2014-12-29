@@ -21,7 +21,7 @@ be something incorrect and missing.
 The robot's source code, schematics and all other stuff is [hosted on github]({{ site.repository }}),
 my mail address is blue dot cube at seznam dot cz.
 In the remote chance that anyone wants to follow the progress of this robot, you
-can use the [github commit log]({{ site.repository}}/commits/gh-pages.atom) for
+can use the github [atom feed]({{ site.repository}}/commits/gh-pages.atom) for
 this site to watch for updates :-).
 
 ![How it looks now]({{ site.baseurl }}/img/2014-08/overview-with-fuses.jpg)
