@@ -31,3 +31,8 @@ class PathIterator:
     def finished(self):
         """ Return True if the path is at the end. """
         raise NotImplementedError()
+
+    def as_state(self):
+        return state.State(self.x, self.y, self.heading,
+                           self.velocity, self.acceleration,
+                           self.curvature)

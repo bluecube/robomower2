@@ -55,4 +55,7 @@ class Controller:
 
     @property
     def intended_state(self):
-        return self._path
+        if self._path is None:
+            return None
+        else:
+            return self._path.as_state()

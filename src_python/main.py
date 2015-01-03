@@ -12,18 +12,13 @@ import layer2
 import mock_hw
 import differential_drive
 import world_map as world_map_module
+import localization
 import controller
 
 import datalogger
-import gui as robotgui
+import gui_proxy as robotgui
 
-import calibration
-
-class Sample:
-    def __init__(self):
-        self.x = 0
-        self.y = 0
-        self.heading = 0
+#import calibration
 
 with open("robomower.config", "r") as fp:
     config = json_mod.load(fp)
@@ -31,10 +26,10 @@ with open("robomower.config", "r") as fp:
 logging.config.dictConfig(config['logging'])
 
 logger = logging.getLogger(__name__)
+logger.info("Hello!")
+
 try:
     gui = robotgui.Gui(config)
-
-    logger.info("Hello!")
 
     try:
         proxy = layer2.proxy.MultiInterfaceProxy(
@@ -63,12 +58,12 @@ try:
 
     data_logger = datalogger.DataLogger("/tmp")
 
-    samples = [Sample() for i in range(1)]
+    samples = [localization.Sample() for i in range(1)]
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]
     gui.kD = config["drive"]["PID"]["kD"]
-    gui.pid_callback = lambda: drive.set_pid(gui.kP, gui.kI, gui.kD)
+    #gui.pid_callback = lambda: drive.set_pid(gui.kP, gui.kI, gui.kD)
     #gui.path = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
     if controller._path is not None:
         gui.path = list(controller._path.sample_intervals(1))
@@ -89,7 +84,6 @@ try:
         gui.velocity = drive.forward_distance() / delta_t
         gui.rpm_l = abs(60e-3 * drive.left_ticks / (delta_t * 16))
         gui.rpm_r = abs(60e-3 * drive.right_ticks / (delta_t * 16))
-        gui.controller = controller
         gui.target = controller.intended_state
         gui.load = main_loop_load
         gui.update()
@@ -100,7 +94,7 @@ try:
         data_logger.write(delta_t,
                           drive.left_command, drive.right_command,
                           drive.left_ticks, drive.right_ticks)
-        if gui.finished:
+        if gui.finished():
             break
 
 except KeyboardInterrupt:

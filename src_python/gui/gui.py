@@ -24,16 +24,11 @@ class Gui:
         lim = robot_config["limits"]
         self._config = robot_config
 
-        self.finished = False
-
-        self.controller = None
+        self._finished = False
 
         self._velocity = widgets.Dial("velocity", 0, math.ceil(lim["velocity"] * 12) / 10, "%.1f", "%.2f", "m/s")
         self._load = widgets.Dial("CPU load", 0, 100, "%d", "%d", "%")
-        self._drive = widgets.Xy("",
-                                 -lim["angular_velocity"],
-                                 lim["velocity"],
-                                 "%.2f rad/s", "%.2f m/s")
+
         self._p_slider = widgets.Slider("kP", 0, 128, "%.1f")
         self._i_slider = widgets.Slider("kI", 0, 128, "%.1f")
         self._d_slider = widgets.Slider("kD", 0, 128, "%.1f")
@@ -43,7 +38,7 @@ class Gui:
         self._rpm_grid = widgets.Grid(2, [self._rpm_l, self._rpm_r], 5)
 
         self._grid = widgets.Grid(self.grid_columns,
-                                  [self._velocity, self._drive, self._load, self._pid_grid,
+                                  [self._velocity, self._pid_grid, self._load,
                                    self._rpm_grid],
                                   5)
         self._map = mapwidget.MapWidget(robot_config["gui"]["map_zoom"])
@@ -77,7 +72,7 @@ class Gui:
         self._mouse = None
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.finished = True
+                self._finished = True
                 return
             elif event.type == pygame.VIDEORESIZE:
                 self._set_mode(event.size)
@@ -90,12 +85,11 @@ class Gui:
                 if event.buttons[0]:
                     self._mouse = event.pos
 
-        self._drive.x = self.controller.turn
-        self._drive.y = self.controller.forward
-        self._drive.label = self.controller.name
-
         self.draw()
         pygame.display.flip()
+
+    def finished(self):
+        return self._finished
 
     @property
     def velocity(self):
@@ -188,7 +182,7 @@ class Gui:
         self._map.lines = [path]
 
     @property
-    def target():
+    def target(self):
         raise AttributeError("Write only!")
 
     @target.setter

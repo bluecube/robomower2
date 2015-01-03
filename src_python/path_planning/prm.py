@@ -15,11 +15,10 @@ import struct
 
 import kdtree
 
+_Connection = collections.namedtuple("_Connection", ["node", "cost"])
 
 class _Node:
     __slots__ = ("state", "connections", "index", "cost", "previous")
-
-    Connection = collections.namedtuple("Connection", ["node", "cost"])
 
     def __init__(self, state):
         self.state = state
@@ -28,7 +27,7 @@ class _Node:
         self.previous = None
 
     def add_connection(self, node, cost):
-        self.connections.append(self.Connection(node, cost))
+        self.connections.append(_Connection(node, cost))
 
 class Prm:
     """ Probabilistic roadmap """
