@@ -12,7 +12,7 @@ The total transmission ratio is approximately 137:1, maximal speed is 1.5 m/s.
 Each motor is connected to
 [25A TrackStar car ESC](https://hobbyking.com/hobbyking/store/__14630__Turnigy_TrackStar_25A_1_18th_Scale_Brushless_Car_ESC.html),
 which is in turn controlled by a custom [driver board]({{ site.repository_master }}/electronics/drive/)
-mounted directly over the motors.
+mounted directly over the motor.
 The board is designed to be as simple as possible, single layered and with as little
 soldering as possible (but the TQFP package of the atmega proved to be too much for me anyway :-) ).
 
@@ -27,29 +27,38 @@ but after a going through a few resistor values it seems to work reliably enough
 
 ## MCU Software
 [Drive board software]({{ site.repository_master }}/src_avr/drive/) counts the encoder ticks
-and generates PWM signal to control the ESC.
-At 10Hz it receives requests for motor speed and returns number of ticks
-since the last update over the RS485 (using the
-[layer2 thingie]({{ site.baseurl }}/internal-communication.html)).
+and generates PWM signal to control the ESC using PID controller.
+
+The motor board communicates with the bus master over RS485 and
+[layer2 thingie]({{ site.baseurl }}/internal-communication.html).
+The [interface]({{ site.repository_master }}/src_avr/drive/drive.interface)
+handles initialization, debugging and the main update request.
+Each update contains a desired speed in ticks per 10ms, reply reports the actual measured
+number of ticks since the last update.
 
 ### Counting encoder ticks
 Most of the encoder tick counting is done by the Timer/Counter0 which is clocked
 by the sensor output pin.
 
-There are two separate places where the number of ticks must be processed
-(when replying to the command on RS485 and when updating PID), so the counter is kept
-running at all the times and allowed to overflow.
+There are two separate places where the number of ticks must be processed --
+when replying to the command on RS485 and when updating PID, so the counter is kept
+running at all the times and allowed to overflow instead of reseting after each event.
 When value of the counter is needed, it is atomically read using the functions
-`latch_encoder_ticks8` and `latch_encoder_ticks16`.
-These functions rely on the fact that the motor doesn't spin too fast and that
-at most one encoder tick may happen while it is running.
+`latch_encoder_ticks8` or `latch_encoder_ticks16`.
+These functions atomically calculate a difference from a previous remembered state
+and update the state to current counter value.
+To assure that the functions are atomic, we rely on the fact that the motor doesn't
+spin too fast and that at most one encoder tick may happen while it is running,
+meaning that if we detect a tick during reading, it is enough to simply read everything
+again.
 
-Because at top speed we might clock more than 256 ticks per interval, the counter
+Because at top speed we might clock more than 256 ticks per one 100ms update interval, the counter
 is extended to 16 bit in software (simple `++ticksHigh` in the overflow interrupt handler).
 
-On the other end the hardware counter can only count rising or falling edges, but not both.
-This means that the resolution would be limited to 8 ticks per motor revolution
-even though there are eight recognizable edges.
+On the other end the we had a problem that hardware counter on atmega can only count
+rising or falling edges, but not both.
+That would limit the resolution to 8 ticks per motor revolution
+even though there are eight recognizable edges on the motor can.
 To avoid this limitation the binary value of the input pin with the sensor value
 is treated as another counter, which causes the Timer/Counter0 to count on overflow.
 At the end we effectively have three counters, chained together: 1 bit pin state,
@@ -58,9 +67,9 @@ These are all stuffed into a single 16 bit final counter value (dropping the mos
 bit).
 
 ### Generating PWM for the speed controller
-The PWM signal for controlling the ESC is generated using the 16 bit Timer1, using the
+The PWM signal for controlling the ESC is generated using 16 bit Timer1, through the
 [servo mini library]({{ site.repository_master }}/src_avr/servo/).
-In the current version the PWM is running at 100 Hz (as opposed to 50 Hz standard
+In the current version PWM is running at 100 Hz (as opposed to 50 Hz standard
 for analog servos).
 
 ### PID
@@ -70,7 +79,7 @@ the PWM generating code.
 
 The controller code is fairly straightforward, calculates error as a difference
 of number of ticks ordered in the previous command to the number of ticks since
-the last PID update.
+last PID update.
 This means that the servo update frequency determines units used for requested speed
 commands.
 
@@ -80,25 +89,25 @@ servo library, but this was a pretty arbitrary choice).
 To avoid some of the noise in the differential term, the differences are smoothed
 over a few last ticks (4 in current version).
 
-Controller parameters can be set at runtime over RS485 (this has helped *a lot*).
-These are transfered in fixed point format (multiplied by 4) and the calculations
-are done in this format as well.
+Controller parameters can be set at runtime over RS485 (this has helped *a lot* during debugging).
+All PID calculations are done in fixed point format with 2 fractional bits.
 
 Update frequency, smoothing interval and parameters multiplier are stored in the
 interface file and compiled in.
 
 ### Direction Changing
-Because there is only a single sensor, there is no way to tell the rotation direction.
-This, however is not much of a problem, because the transmission ratio is so high,
+Because there is only a single sensor measuring ticks, there is no way to directly
+measure the rotation direction.
+This however is not much of a problem, because the transmission ratio is so high,
 that forces on the wheels don't move the motor (I didn't try too hard, though,
 I was afraid the force could strip the teeth on the belts).
 The only problem that remains is to change directions of the motor reliably.
 To do this the drive board software has a small state machine that waits
-until there were at least four PID update cycles with zero ticks until the motor
+until there were at least four PID update cycles with zero ticks measured until the motor
 can start moving again.
 
 ## Moral of the story
-BLDC motors are cool, but using sensorless ones is a PITA.
+BLDC motors are cool, but using sensorless ones is PITA.
 The starting performance is terrible (maybe better ESC would help?),
 they jump, stutter and whine until they get over about 1000 rpm (that is 10 mm/s),
 then they start working perfectly again.
