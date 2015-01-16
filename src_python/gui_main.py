@@ -21,17 +21,17 @@ try:
 
     gui = robotgui.Gui(config)
     rpcproxy = xmlrpc.client.ServerProxy(sys.argv[1],
-                                         verbose=True,
                                          use_builtin_types=True)
     logger.info("Connected to XML-RPC server")
 
 
     sleep_timer = util.TimeElapsed()
+    last_frame = 0
+    versions = {}
     while True:
         sleep_timer.tick(0.5)
 
-        data = rpcproxy.request_data()
-        data = pickle.loads(data)
+        data, versions = pickle.loads(rpcproxy.request_data(versions))
 
         for k, v in data.items():
             setattr(gui, k, v)
