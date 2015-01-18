@@ -58,7 +58,7 @@ try:
 
     data_logger = datalogger.DataLogger("/tmp")
 
-    samples = [localization.Sample() for i in range(1)]
+    localization = localization.mcl.MCL(config)
 
     gui.kP = config["drive"]["PID"]["kP"]
     gui.kI = config["drive"]["PID"]["kI"]
@@ -88,6 +88,7 @@ try:
         gui.load = main_loop_load
         gui.update()
 
+        localization.update(drive, observations)
         samples = [drive.update_sample(s) for s in samples]
         gui.samples = samples
 

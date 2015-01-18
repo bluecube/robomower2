@@ -17,8 +17,8 @@ class DifferentialDriveModel:
         self.right_sigma = right_sigma
         self.wheel_base = wheel_base
 
-    def update_sample(self, sample, left_ticks, right_ticks):
-        """ Returns a new sample updated according to measured movement."""
+    def update_samples(self, samples, left_ticks, right_ticks):
+        """ Modifies in place a numpy array of samples or a single sample. """
 
         left_distance = left_ticks * self.left_resolution * random.gauss(1, self.left_sigma)
         right_distance = right_ticks * self.right_resolution * random.gauss(1, self.right_sigma)
@@ -26,7 +26,7 @@ class DifferentialDriveModel:
         forward = (left_distance + right_distance) * 0.5
         turn = (right_distance - left_distance) / self.wheel_base
 
-        alpha = sample.heading + turn / 2
+        alpha = samples["heading"] + turn / 2
 
         # For circular paths, shifts of the sample should be multiplied
         # by forward * 2 * math.sin(turn / 2) / turn instead of just forward
@@ -34,14 +34,12 @@ class DifferentialDriveModel:
         # than 0.1 => error is about 0.04%
         #assert abs(turn) < 0.15 # this is not true in the calibration
 
-        sample = copy.copy(sample)
+        samples["x"] += math.cos(alpha) * forward
+        samples["y"] += math.sin(alpha) * forward
 
-        sample.x += math.cos(alpha) * forward
-        sample.y += math.sin(alpha) * forward
+        samples["heading"] += turn
 
-        sample.heading += turn
-
-        return sample
+        return samples
 
     def forward_distance(self, left_ticks, right_ticks):
         """ Return ideal forward distance travelled if wheels measured given
@@ -102,5 +100,5 @@ class DifferentialDrive:
         self.left_ticks = self.left_proxy.update(self.left_command)['distance']
         self.right_ticks = self.right_proxy.update(self.right_command)['distance']
 
-    def update_sample(self, sample):
-        return self.model.update_sample(sample, self.left_ticks, self.right_ticks)
+    def update_samples(self, samples):
+        return self.model.update_samples(samples, self.left_ticks, self.right_ticks)
