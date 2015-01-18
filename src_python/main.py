@@ -13,10 +13,11 @@ import mock_hw
 import differential_drive
 import world_map as world_map_module
 import localization
-import controller
+#import controller
+import joystick_controller
 
 import datalogger
-import gui_proxy as robotgui
+import gui as robotgui
 
 #import calibration
 
@@ -44,8 +45,8 @@ try:
 
     drive = differential_drive.DifferentialDrive(proxy.left, proxy.right, config["drive"])
 
-    world_map = world_map_module.WorldMap()
-    gui.world_map = world_map.polygons
+    #world_map = world_map_module.WorldMap()
+    #gui.world_map = world_map.polygons
 
     #for _, node in path_planner._nodes:
     #    for child, travel_time, cost in node.connections:
@@ -53,8 +54,8 @@ try:
     #        assert p is not None
     #        gui._map.lines.append(list(p.sample_intervals(1)))
 
-    controller = controller.Controller(drive, world_map, config)
-    #gui_controller = gui.get_controller(drive)
+    #controller = controller.Controller(drive, world_map, config)
+    controller = joystick_controller.JoystickController(drive, config)
 
     data_logger = datalogger.DataLogger("/tmp")
 
@@ -65,26 +66,27 @@ try:
     gui.kD = config["drive"]["PID"]["kD"]
     #gui.pid_callback = lambda: drive.set_pid(gui.kP, gui.kI, gui.kD)
     #gui.path = set(zip(calibration.ground_truth[1:], calibration.ground_truth[:-1]))
-    if controller._path is not None:
-        gui.path = list(controller._path.sample_intervals(1))
-        controller._path.reset()
-        logger.info("Path length: %d s", controller._path.travel_time)
-    else:
-        logger.info("Path not found")
-        gui.path = []
+    #if controller._path is not None:
+    #    gui.path = list(controller._path.sample_intervals(1))
+    #    controller._path.reset()
+    #    logger.info("Path length: %d s", controller._path.travel_time)
+    #else:
+    #    logger.info("Path not found")
+    #    gui.path = []
 
     sleep_timer = util.TimeElapsed()
     while True:
         proxy.broadcast.latch_values()
         delta_t, main_loop_load = sleep_timer.tick(0.1)
 
-        controller.update(samples[0], delta_t)
+        #controller.update(samples[0], delta_t)
+        controller.update(delta_t)
         drive.update()
 
         gui.velocity = drive.forward_distance() / delta_t
         gui.rpm_l = abs(60e-3 * drive.left_ticks / (delta_t * 16))
         gui.rpm_r = abs(60e-3 * drive.right_ticks / (delta_t * 16))
-        gui.target = controller.intended_state
+        #gui.target = controller.intended_state
         gui.load = main_loop_load
         gui.update()
 

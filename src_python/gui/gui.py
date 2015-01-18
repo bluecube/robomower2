@@ -4,7 +4,6 @@ import math
 from . import config
 from . import widgets
 from . import mapwidget
-from . import controller
 
 pygame.init()
 
